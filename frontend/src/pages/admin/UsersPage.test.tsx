@@ -51,6 +51,24 @@ describe('Users page', () => {
     expect(screen.getByText('Created user Test ICN (ICN001) as ICN')).toBeInTheDocument();
   });
 
+  it('offers no status or reset actions for link nurses, only a link when the viewer has ln', async () => {
+    await openUsers();
+    const ln = within(screen.getByText('LN001').closest('tr')!);
+    for (const name of [/Edit/, /Reset password/, /Make inactive/, /Make active/])
+      expect(ln.queryByRole('button', { name })).not.toBeInTheDocument();
+    expect(ln.getByRole('link', { name: /Priya R\./ })).toHaveAttribute(
+      'href',
+      '/hand-hygiene/link-nurses?q=LN001&status=all',
+    );
+  });
+
+  it('hides the Link nurses link from viewers without ln', async () => {
+    mockApi(withSession({ ...adminMe, permissions: ['users'] }, (c) => base()(c)));
+    renderWithAuth(<AppRoutes />, '/admin/users');
+    await screen.findByText('LN001');
+    expect(screen.queryByRole('link', { name: /Link nurses page/ })).not.toBeInTheDocument();
+  });
+
   it('shows audit time in Asia/Kolkata', async () => {
     await openUsers();
     expect(screen.getByText(/3:30/)).toBeInTheDocument();

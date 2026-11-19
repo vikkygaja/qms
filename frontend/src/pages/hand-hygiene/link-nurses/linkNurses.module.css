@@ -1,0 +1,127 @@
+/* Link nurses page: chips, ward checklist, history tables. Tokens only. */
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: var(--accent-soft);
+  color: var(--accent);
+  border-radius: 6px;
+  padding: 1px 8px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.chipMore {
+  background: var(--bg);
+  color: var(--muted);
+  border: 1px solid var(--line);
+}
+.chipX {
+  all: unset;
+  cursor: pointer;
+  font-size: 1rem;
+  line-height: 1;
+  padding: 0 2px;
+  border-radius: 4px;
+}
+.chipX:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 1px;
+}
+.none {
+  color: var(--muted);
+  font-size: 0.82rem;
+}
+.sub {
+  display: block;
+  font-size: 0.78rem;
+  color: var(--muted);
+}
+.mono {
+  font-family: ui-monospace, Consolas, monospace;
+  font-size: 0.85rem;
+}
+.pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  align-items: center;
+}
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  justify-content: flex-end;
+}
+.wardPick {
+  display: grid;
+  gap: 8px;
+}
+.wardHead {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 8px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--muted);
+}
+.wardList {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  max-height: 260px;
+  overflow: auto;
+  display: grid;
+}
+.wardRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  border-bottom: 1px solid var(--line);
+  font-size: 0.88rem;
+  cursor: pointer;
+}
+.wardRow:last-child {
+  border-bottom: 0;
+}
+.wardRow:hover {
+  background: var(--bg);
+}
+.wardRow input {
+  width: 16px;
+  height: 16px;
+}
+.wardRow .meta {
+  margin-left: auto;
+  font-size: 0.75rem;
+  color: var(--muted);
+  white-space: nowrap;
+}
+.history {
+  display: grid;
+  gap: 8px;
+}
+.history h3 {
+  font-size: 0.9rem;
+  margin: 0;
+}
+.recent td,
+.recent th {
+  font-size: 0.82rem;
+}
+.warnText {
+  background: var(--warn-soft);
+  color: var(--ink);
+  border-radius: 8px;
+  padding: 8px 10px;
+  font-size: 0.82rem;
+}
+.secretWrap {
+  margin: 0;
+}

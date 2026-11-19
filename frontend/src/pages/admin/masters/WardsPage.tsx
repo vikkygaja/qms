@@ -77,9 +77,15 @@ const CFG: MasterListConfig<Ward> = {
       align: 'right',
       render: (w) => fmt(w.monthly_target),
     },
+    {
+      key: 'ln',
+      header: 'Link nurses',
+      align: 'right',
+      render: (w) => fmt(w.link_nurse_count),
+    },
   ],
   inactiveEffect:
-    'This ward will no longer appear on entry screens. Past sessions and reports keep it. You can make it active again later.',
+    'This ward will no longer appear on entry screens. Past sessions and reports keep it. You can make it active again later. A ward with link nurses assigned cannot be made inactive until they are moved.',
   activeEffect: 'This ward will appear on entry screens again.',
   firstTimeText: 'Add wards one by one, or import them from an Excel file.',
   above: <SummaryStrip />,

@@ -18,6 +18,8 @@ describe('Wards page', () => {
     const table = within(screen.getByRole('table'));
     expect(table.getByText('Critical Care')).toBeInTheDocument();
     expect(table.getByText('65')).toBeInTheDocument();
+    expect(table.getByRole('columnheader', { name: 'Link nurses' })).toBeInTheDocument();
+    expect(table.getByText('3')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Add ward' })).toBeInTheDocument();
     expect(await screen.findByText('Monthly target (active wards)')).toBeInTheDocument();
     expect(screen.getByText('1,000')).toBeInTheDocument();
@@ -222,5 +224,24 @@ describe('Wards page', () => {
     expect(post.body).toEqual({ status: 'Inactive', reason: 'Ward closed' });
     expect(post.headers.get('X-CSRF-Token')).toBe('csrf-1');
     expect(await screen.findByText('MICU is now Inactive.')).toBeInTheDocument();
+  });
+
+  it('shows the server refusal when a ward still has link nurses', async () => {
+    const { user } = await openAt(
+      '/admin/masters/wards',
+      (c) =>
+        c.method === 'POST' && c.path === '/wards/w1/status'
+          ? apiError(409, 'conflict', "Move this ward's link nurses first (3 assigned).")
+          : undefined,
+      'MICU',
+    );
+    await user.click(screen.getByRole('button', { name: 'Make inactive: MICU' }));
+    const dlg = await screen.findByRole('dialog', { name: 'Make MICU inactive?' });
+    await user.type(within(dlg).getByLabelText(/Reason/), 'Ward closed');
+    await user.click(within(dlg).getByRole('button', { name: 'Make inactive' }));
+    expect(
+      await within(dlg).findByText("Move this ward's link nurses first (3 assigned)."),
+    ).toBeInTheDocument();
+    expect(screen.getByRole('dialog', { name: 'Make MICU inactive?' })).toBeInTheDocument();
   });
 });

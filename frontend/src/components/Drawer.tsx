@@ -12,12 +12,15 @@ export function Drawer({
   description,
   onClose,
   footer,
+  wide,
   children,
 }: {
   title: string;
   description: string;
   onClose: () => void;
   footer: ReactNode;
+  /** Wider panel for forms with tables or checklists. */
+  wide?: boolean;
   children: ReactNode;
 }) {
   const ref = useRef<HTMLDivElement>(null);
@@ -27,7 +30,7 @@ export function Drawer({
         <Dialog.Overlay className={s.overlay} />
         <Dialog.Content
           ref={ref}
-          className={s.drawer}
+          className={wide ? `${s.drawer} ${s.drawerWide}` : s.drawer}
           onInteractOutside={(e) => e.preventDefault()}
           onOpenAutoFocus={(e) => {
             const el = ref.current?.querySelector<HTMLElement>('[data-autofocus]');

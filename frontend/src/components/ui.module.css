@@ -236,6 +236,9 @@
   flex-direction: column;
   animation: slide 0.2s ease-out;
 }
+.drawerWide {
+  width: min(640px, 100vw);
+}
 .drawerHead {
   display: flex;
   justify-content: space-between;

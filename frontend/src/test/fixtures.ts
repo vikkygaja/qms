@@ -1,4 +1,12 @@
-import type { AuditEntry, Me, Permission, Role, User } from '../api/types';
+import type {
+  AuditEntry,
+  LinkNurse,
+  LinkNurseDetail,
+  Me,
+  Permission,
+  Role,
+  User,
+} from '../api/types';
 
 export const ALL_PERMS = [
   'masters',
@@ -130,6 +138,7 @@ export const WARD_MICU = {
   department: { id: 'd1', name: 'Critical Care' },
   monthly_target: 65,
   status: 'Active' as const,
+  link_nurse_count: 3,
 };
 export const CAT_DOCTOR = { id: 'c1', name: 'Doctor', code: 'D', status: 'Active' as const };
 export const CAT_NURSE = { id: 'c2', name: 'Nurse', code: 'N', status: 'Active' as const };
@@ -140,3 +149,50 @@ export const SUMMARY = {
   staff_categories: { active: 6, inactive: 0 },
   kpi: { green: 90, amber: 80, inactive_days: 10 },
 };
+
+export const WARD_SICU = {
+  id: 'w2',
+  name: 'SICU',
+  department: { id: 'd1', name: 'Critical Care' },
+  monthly_target: 50,
+  status: 'Active' as const,
+  link_nurse_count: 0,
+};
+
+export const makeLinkNurse = (over: Partial<LinkNurse> = {}): LinkNurse => ({
+  id: 'ln1',
+  employee_id: 'SN1001',
+  full_name: 'Priya R.',
+  designation: 'Sister',
+  department: { id: 'd1', name: 'Critical Care' },
+  mobile: '9840010000',
+  email: '',
+  link_nurse_from: '2026-01-05',
+  who5_training_date: '2026-01-10',
+  status: 'Active',
+  must_change_password: false,
+  wards: [{ id: 'w1', name: 'MICU' }],
+  sessions_this_month: 0,
+  last_entry_date: null,
+  no_entry_flag: false,
+  ...over,
+});
+
+export const makeLinkNurseDetail = (over: Partial<LinkNurseDetail> = {}): LinkNurseDetail => ({
+  ...makeLinkNurse(),
+  assignments: [
+    { ward: { id: 'w1', name: 'MICU' }, from_date: '2026-06-01', to_date: null },
+    { ward: { id: 'w9', name: 'Old Ward' }, from_date: '2026-01-05', to_date: '2026-05-31' },
+  ],
+  status_history: [
+    {
+      old_status: 'Active',
+      new_status: 'Inactive',
+      reason: 'Long leave',
+      effective_date: '2026-10-31',
+      changed_at: '2026-10-31T10:40:00Z',
+      changed_by: { id: 'u-icn', full_name: 'Sr. Mary J.' },
+    },
+  ],
+  ...over,
+});

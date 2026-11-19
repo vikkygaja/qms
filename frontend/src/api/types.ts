@@ -87,6 +87,8 @@ export interface Ward {
   department: { id: string; name: string };
   monthly_target: number;
   status: ItemStatus;
+  /** Link nurses currently assigned to this ward. */
+  link_nurse_count: number;
 }
 export interface StaffCategory {
   id: string;
@@ -120,4 +122,44 @@ export interface MastersSummary {
   wards: { active: number; inactive: number; monthly_target_total: number };
   staff_categories: { active: number; inactive: number };
   kpi: KpiSettings;
+}
+
+export interface LinkNurse {
+  id: string;
+  employee_id: string;
+  full_name: string;
+  designation: string;
+  department: { id: string; name: string };
+  mobile: string;
+  email: string;
+  link_nurse_from: string;
+  who5_training_date: string | null;
+  status: ItemStatus;
+  must_change_password: boolean;
+  /** Current wards only. */
+  wards: { id: string; name: string }[];
+  sessions_this_month: number;
+  last_entry_date: string | null;
+  no_entry_flag: boolean;
+}
+export interface WardAssignment {
+  ward: { id: string; name: string };
+  from_date: string;
+  to_date: string | null;
+}
+export interface LinkNurseStatusChange {
+  old_status: ItemStatus;
+  new_status: ItemStatus;
+  reason: string;
+  effective_date: string;
+  changed_at: string;
+  changed_by: { id: string; full_name: string } | null;
+}
+export interface LinkNurseDetail extends LinkNurse {
+  assignments: WardAssignment[];
+  status_history: LinkNurseStatusChange[];
+}
+export interface LinkNurseWithPassword {
+  link_nurse: LinkNurseDetail;
+  temporary_password: string;
 }
