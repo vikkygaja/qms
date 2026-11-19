@@ -1,0 +1,330 @@
+/* Shared building blocks for list-style admin pages. Tokens only; light and dark follow tokens.css. */
+
+/* Page header */
+.header {
+  display: grid;
+  gap: 6px;
+}
+.crumbs ol {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+.crumbs li + li::before {
+  content: '/';
+  margin-right: 6px;
+  opacity: 0.6;
+}
+.crumbs a {
+  color: var(--muted);
+}
+.crumbs a:hover {
+  color: var(--accent);
+}
+.titleRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.titleLine {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 10px;
+}
+.count {
+  font-size: 0.85rem;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+.desc {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.9rem;
+  max-width: 70ch;
+}
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+/* Status pill: text always present; the marker shape differs so colour is never the only signal */
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border-radius: 99px;
+  padding: 1px 10px 1px 8px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.pill::before {
+  content: '';
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: currentColor;
+}
+.pillOff::before {
+  background: transparent;
+  box-shadow: inset 0 0 0 1.5px currentColor;
+}
+.pillOn {
+  background: var(--good-soft);
+  color: var(--good);
+}
+.pillOff {
+  background: var(--bg);
+  color: var(--muted);
+  border: 1px solid var(--line);
+}
+
+/* Skeleton */
+.skeleton {
+  display: block;
+  border-radius: 6px;
+  background: linear-gradient(90deg, var(--line) 25%, var(--bg) 50%, var(--line) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.4s linear infinite;
+  min-height: 14px;
+}
+@keyframes shimmer {
+  to {
+    background-position: -200% 0;
+  }
+}
+
+/* Empty state */
+.empty {
+  display: grid;
+  justify-items: center;
+  gap: 8px;
+  text-align: center;
+  padding: 40px 16px;
+}
+.empty h2 {
+  font-size: 1.05rem;
+}
+.empty p {
+  margin: 0;
+  color: var(--muted);
+  max-width: 48ch;
+  font-size: 0.9rem;
+}
+.emptyActions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: center;
+  margin-top: 6px;
+}
+
+/* Filter bar */
+.filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: end;
+}
+
+/* Data table */
+.scroller {
+  overflow: auto;
+  max-height: calc(100vh - 300px);
+  min-height: 120px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+}
+.table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  font-variant-numeric: tabular-nums;
+}
+.table th,
+.table td {
+  padding: 9px 12px;
+  border-bottom: 1px solid var(--line);
+  vertical-align: middle;
+  background: var(--surface);
+}
+.table tbody tr:last-child td {
+  border-bottom: 0;
+}
+.table tbody tr:hover td {
+  background: var(--bg);
+}
+.table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: var(--bg);
+  font-size: 0.74rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+  white-space: nowrap;
+}
+.sticky {
+  position: sticky;
+  left: 0;
+  z-index: 1;
+  min-width: 160px;
+}
+.table thead th.sticky {
+  z-index: 3;
+}
+.right {
+  text-align: right !important;
+}
+.sortBtn {
+  all: unset;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  text-transform: inherit;
+  letter-spacing: inherit;
+  font: inherit;
+  color: inherit;
+  border-radius: 4px;
+}
+.sortBtn:hover {
+  color: var(--ink);
+}
+.sortBtn:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 2px;
+}
+.sortMark {
+  font-size: 0.7rem;
+  width: 0.8em;
+  opacity: 0.5;
+}
+.sorted .sortMark {
+  opacity: 1;
+  color: var(--accent);
+}
+
+/* Drawer (right slide-over) */
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: var(--overlay);
+  z-index: 40;
+  animation: fade 0.15s ease-out;
+}
+.drawer {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: min(460px, 100vw);
+  background: var(--surface);
+  border-left: 1px solid var(--line);
+  z-index: 41;
+  display: flex;
+  flex-direction: column;
+  animation: slide 0.2s ease-out;
+}
+.drawerHead {
+  display: flex;
+  justify-content: space-between;
+  align-items: start;
+  gap: 12px;
+  padding: 18px 20px 12px;
+  border-bottom: 1px solid var(--line);
+}
+.drawerHead p {
+  margin: 4px 0 0;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+.drawerBody {
+  padding: 18px 20px;
+  overflow: auto;
+  flex: 1;
+}
+.drawerFoot {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+  padding: 12px 20px;
+  border-top: 1px solid var(--line);
+  background: var(--bg);
+}
+.close {
+  all: unset;
+  cursor: pointer;
+  width: 32px;
+  height: 32px;
+  display: grid;
+  place-items: center;
+  border-radius: 8px;
+  font-size: 1.3rem;
+  line-height: 1;
+  color: var(--muted);
+}
+.close:hover {
+  background: var(--bg);
+  color: var(--ink);
+}
+.close:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* Confirm dialog (centred) */
+.dialog {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: min(460px, calc(100vw - 32px));
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 20px;
+  z-index: 41;
+  display: grid;
+  gap: 12px;
+  animation: fade 0.15s ease-out;
+}
+.dialog p {
+  margin: 0;
+  font-size: 0.9rem;
+}
+.dialogFoot {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+@keyframes fade {
+  from {
+    opacity: 0;
+  }
+}
+@keyframes slide {
+  from {
+    transform: translateX(24px);
+    opacity: 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .overlay,
+  .drawer,
+  .dialog,
+  .skeleton {
+    animation: none;
+  }
+}

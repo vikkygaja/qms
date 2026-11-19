@@ -22,11 +22,40 @@ CODES = {
 }
 
 
+class ApiError(Exception):
+    """Raise anywhere to return the standard error body with a specific code."""
+
+    def __init__(
+        self, status_code: int, code: str, message: str, details: list[dict] | None = None
+    ) -> None:
+        super().__init__(message)
+        self.status_code = status_code
+        self.code = code
+        self.message = message
+        self.details = details or []
+
+
+def field_error(field: str, message: str) -> ApiError:
+    return ApiError(
+        422, "validation_error", "Some fields are invalid", [{"field": field, "message": message}]
+    )
+
+
 def error_body(code: str, message: str, details: list | None = None) -> dict:
     return {"error": {"code": code, "message": message, "details": details or []}}
 
 
+def _clean(message: str) -> str:
+    return message.removeprefix("Value error, ")
+
+
 def register_exception_handlers(app: FastAPI) -> None:
+    @app.exception_handler(ApiError)
+    async def api_exc(_: Request, exc: ApiError) -> JSONResponse:
+        return JSONResponse(
+            error_body(exc.code, exc.message, exc.details), status_code=exc.status_code
+        )
+
     @app.exception_handler(StarletteHTTPException)
     async def http_exc(_: Request, exc: StarletteHTTPException) -> JSONResponse:
         code = CODES.get(exc.status_code, "http_error")
@@ -36,7 +65,7 @@ def register_exception_handlers(app: FastAPI) -> None:
     @app.exception_handler(RequestValidationError)
     async def validation_exc(_: Request, exc: RequestValidationError) -> JSONResponse:
         details = [
-            {"field": ".".join(str(p) for p in e["loc"][1:]), "message": e["msg"]}
+            {"field": ".".join(str(p) for p in e["loc"][1:]), "message": _clean(e["msg"])}
             for e in exc.errors()
         ]
         return JSONResponse(

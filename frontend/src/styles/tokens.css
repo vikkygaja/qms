@@ -16,6 +16,7 @@
   --warn-soft: #faefd8;
   --bad: #b0281f;
   --bad-soft: #fbe4e1;
+  --overlay: rgba(10, 25, 32, 0.45);
   --display: 'Manrope', system-ui, sans-serif;
   --body: 'Public Sans', system-ui, sans-serif;
   color-scheme: light;
