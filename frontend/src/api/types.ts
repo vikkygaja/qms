@@ -70,3 +70,47 @@ export interface AuditEntry {
   old_values: Record<string, unknown> | null;
   new_values: Record<string, unknown> | null;
 }
+
+export type MasterKind = 'departments' | 'wards' | 'staff-categories';
+export type ExportKind = MasterKind | 'all';
+export type ItemStatus = 'Active' | 'Inactive';
+
+export interface Department {
+  id: string;
+  name: string;
+  status: ItemStatus;
+  ward_count: number;
+}
+export interface Ward {
+  id: string;
+  name: string;
+  department: { id: string; name: string };
+  monthly_target: number;
+  status: ItemStatus;
+}
+export interface StaffCategory {
+  id: string;
+  name: string;
+  code: string;
+  status: ItemStatus;
+}
+export interface KpiSettings {
+  green: number;
+  amber: number;
+  inactive_days: number;
+}
+
+export interface ImportRow {
+  sheet: string;
+  row: number;
+  name: string;
+  action: 'create' | 'update' | 'unchanged' | 'error';
+  message: string;
+}
+export interface ImportReport {
+  dry_run: boolean;
+  applied: boolean;
+  summary: { created: number; updated: number; unchanged: number; errors: number };
+  rows: ImportRow[];
+  truncated: boolean;
+}

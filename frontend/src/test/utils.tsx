@@ -49,7 +49,12 @@ export function mockApi(handler: ApiHandler) {
       method: (init?.method ?? 'GET').toUpperCase(),
       path: url.pathname.replace(/^\/api\/v1/, ''),
       query: url.searchParams,
-      body: init?.body ? JSON.parse(String(init.body)) : undefined,
+      body:
+        init?.body instanceof FormData
+          ? init.body
+          : init?.body
+            ? JSON.parse(String(init.body))
+            : undefined,
       headers: new Headers(init?.headers),
       credentials: init?.credentials,
     };

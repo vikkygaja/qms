@@ -4,8 +4,10 @@ import { BrowserRouter, Route, Routes } from 'react-router-dom';
 import { AuthProvider } from '../auth/AuthProvider';
 import { PublicOnly, RequireAuth, RequirePermission } from '../auth/guards';
 import { AuditLogPage } from '../pages/admin/AuditLogPage';
+import { MastersPage } from '../pages/admin/MastersPage';
 import { RolesPage } from '../pages/admin/RolesPage';
 import { UsersPage } from '../pages/admin/UsersPage';
+import { SheetPage } from '../pages/hand-hygiene/SheetPage';
 import { LoginPage } from '../pages/auth/LoginPage';
 import { SetPasswordPage } from '../pages/auth/SetPasswordPage';
 import { NotFoundPage, PlaceholderPage } from '../pages/PlaceholderPage';
@@ -16,6 +18,8 @@ const PAGES: Record<string, ReactNode> = {
   '/admin/users': <UsersPage />,
   '/admin/roles': <RolesPage />,
   '/admin/audit-log': <AuditLogPage />,
+  '/admin/masters': <MastersPage />,
+  '/hand-hygiene/sheet': <SheetPage />,
 };
 
 export function AppRoutes() {

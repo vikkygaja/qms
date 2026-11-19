@@ -70,7 +70,8 @@ select,
 input[type='text'],
 input[type='password'],
 input[type='date'],
-input[type='search'] {
+input[type='search'],
+input[type='number'] {
   background: var(--bg);
   border: 1px solid var(--line);
   border-radius: 8px;
@@ -198,4 +199,81 @@ code {
 .matrix input {
   width: 18px;
   height: 18px;
+}
+
+a.btn {
+  display: inline-block;
+  text-decoration: none;
+}
+.g2 {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(380px, 1fr));
+  gap: 16px;
+  align-items: start;
+}
+
+/* Printable observation sheet */
+.sheet {
+  background: #fff;
+  color: #111;
+  border: 1px solid #bbb;
+  border-radius: 6px;
+  padding: 18px;
+  font-size: 0.78rem;
+}
+.sheet table th,
+.sheet table td {
+  border: 1px solid #999;
+  padding: 4px;
+  color: #111;
+}
+.sheet .cell {
+  display: inline-block;
+  margin-right: 6px;
+  white-space: nowrap;
+}
+.box {
+  display: inline-block;
+  width: 11px;
+  height: 11px;
+  border: 1px solid #333;
+  margin: 0 2px -1px 3px;
+}
+@media print {
+  @page {
+    margin: 12mm;
+  }
+  html,
+  body {
+    height: auto;
+    background: #fff;
+    color: #000;
+  }
+  .no-print,
+  .toast {
+    display: none !important;
+  }
+  .print-flat {
+    display: block !important;
+  }
+  main {
+    padding: 0 !important;
+    max-width: none !important;
+  }
+  .card {
+    border: 0;
+    padding: 0;
+    background: #fff;
+  }
+  .sheet {
+    border: 0;
+    padding: 0;
+  }
+  .sheet table th,
+  .sheet table td {
+    border: 1px solid #000;
+  }
+  .tw {
+    overflow: visible;
+  }
 }

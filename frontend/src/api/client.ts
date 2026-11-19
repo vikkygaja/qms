@@ -53,20 +53,25 @@ function buildPath(path: string, query?: Query) {
   return `${BASE}${path}${qs ? `?${qs}` : ''}`;
 }
 
-export async function api<T>(method: string, path: string, opts: Options = {}): Promise<T> {
-  const headers: Record<string, string> = { Accept: 'application/json' };
-  const init: RequestInit = { method, credentials: 'same-origin', headers };
-  if (opts.body !== undefined) {
-    headers['Content-Type'] = 'application/json';
-    init.body = JSON.stringify(opts.body);
-  }
+async function send<T>(
+  method: string,
+  path: string,
+  init: RequestInit,
+  headers: Record<string, string>,
+  query?: Query,
+): Promise<T> {
   if (method !== 'GET' && method !== 'HEAD' && csrfToken) {
     headers['X-CSRF-Token'] = csrfToken;
   }
 
   let res: Response;
   try {
-    res = await fetch(buildPath(path, opts.query), init);
+    res = await fetch(buildPath(path, query), {
+      ...init,
+      method,
+      credentials: 'same-origin',
+      headers,
+    });
   } catch {
     throw new ApiError(
       0,
@@ -97,6 +102,21 @@ export async function api<T>(method: string, path: string, opts: Options = {}): 
     unauthorizedHandler?.();
   }
   throw new ApiError(res.status, code, message, details);
+}
+
+export function api<T>(method: string, path: string, opts: Options = {}): Promise<T> {
+  const headers: Record<string, string> = { Accept: 'application/json' };
+  const init: RequestInit = {};
+  if (opts.body !== undefined) {
+    headers['Content-Type'] = 'application/json';
+    init.body = JSON.stringify(opts.body);
+  }
+  return send<T>(method, path, init, headers, opts.query);
+}
+
+/** multipart/form-data POST. Content-Type is left to the browser so it adds the boundary. */
+export function upload<T>(path: string, form: FormData, query?: Query): Promise<T> {
+  return send<T>('POST', path, { body: form }, { Accept: 'application/json' }, query);
 }
 
 export const get = <T>(path: string, query?: Query) => api<T>('GET', path, { query });

@@ -1,5 +1,5 @@
-import { describe, expect, it } from 'vitest';
-import { ApiError, get, getCsrfToken, post, setCsrfToken } from './client';
+import { describe, expect, it, vi } from 'vitest';
+import { ApiError, get, getCsrfToken, post, setCsrfToken, upload } from './client';
 import { login } from './auth';
 import { adminMe } from '../test/fixtures';
 import { apiError, mockApi } from '../test/utils';
@@ -53,5 +53,32 @@ describe('api client', () => {
     expect(dump).not.toContain('pw-never-stored-1');
     expect(localStorage.length).toBe(0);
     expect(sessionStorage.length).toBe(0);
+  });
+});
+
+describe('upload', () => {
+  it('sends the CSRF header, no Content-Type, and parses API errors', async () => {
+    setCsrfToken('tok');
+    const fn = vi
+      .fn()
+      .mockResolvedValueOnce(new Response(JSON.stringify({ ok: 1 }), { status: 200 }))
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({
+            error: { code: 'validation_error', message: 'Bad file.', details: [] },
+          }),
+          { status: 422 },
+        ),
+      );
+    vi.stubGlobal('fetch', fn);
+    const form = new FormData();
+    form.append('file', new File(['x'], 'a.csv'));
+    await upload('/masters/import', form, { kind: 'wards', dry_run: 'true' });
+    const [url, init] = fn.mock.calls[0];
+    expect(url).toBe('/api/v1/masters/import?kind=wards&dry_run=true');
+    expect(new Headers(init.headers).get('X-CSRF-Token')).toBe('tok');
+    expect(new Headers(init.headers).has('Content-Type')).toBe(false);
+    expect(init.body).toBe(form);
+    await expect(upload('/masters/import', form)).rejects.toBeInstanceOf(ApiError);
   });
 });

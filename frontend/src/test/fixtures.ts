@@ -111,3 +111,25 @@ export const page = <T>(items: T[], extra: Partial<{ total: number; page: number
   page: extra.page ?? 1,
   page_size: 25,
 });
+
+export const DEPT_ICU = {
+  id: 'd1',
+  name: 'Critical Care',
+  status: 'Active' as const,
+  ward_count: 1,
+};
+export const DEPT_GEN = {
+  id: 'd2',
+  name: 'General Medicine',
+  status: 'Active' as const,
+  ward_count: 0,
+};
+export const WARD_MICU = {
+  id: 'w1',
+  name: 'MICU',
+  department: { id: 'd1', name: 'Critical Care' },
+  monthly_target: 65,
+  status: 'Active' as const,
+};
+export const CAT_DOCTOR = { id: 'c1', name: 'Doctor', code: 'D', status: 'Active' as const };
+export const CAT_NURSE = { id: 'c2', name: 'Nurse', code: 'N', status: 'Active' as const };

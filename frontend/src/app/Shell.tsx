@@ -9,11 +9,11 @@ export function Shell() {
   const isLinkNurse = user?.role.key === LINK_NURSE_ROLE;
   return (
     <>
-      <a className={styles.skip} href="#main">
+      <a className={`${styles.skip} no-print`} href="#main">
         Skip to content
       </a>
-      <div className={styles.app}>
-        <nav className={styles.nav} aria-label="Main">
+      <div className={`${styles.app} print-flat`}>
+        <nav className={`${styles.nav} no-print`} aria-label="Main">
           <div className={styles.logo}>
             QMS<small>Sri Narayani Hospital</small>
           </div>
@@ -50,7 +50,7 @@ export function Shell() {
           })}
         </nav>
         <div className={styles.main}>
-          <header className={styles.top}>
+          <header className={`${styles.top} no-print`}>
             <strong>Hospital Quality Management System</strong>
             <div className={styles.who}>
               <span>
