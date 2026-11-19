@@ -1,0 +1,43 @@
+/* Design tokens taken from the approved prototype (light + dark). */
+:root {
+  --bg: #f3f5f7;
+  --surface: #ffffff;
+  --ink: #13212d;
+  --muted: #5b6a77;
+  --line: #d9e1e7;
+  --accent: #0a6a72;
+  --accent-soft: #def0f1;
+  --nav: #0f2733;
+  --nav-ink: #c9dde1;
+  --nav-act: #1c4352;
+  --good: #1d7a45;
+  --good-soft: #e2f2e7;
+  --warn: #986100;
+  --warn-soft: #faefd8;
+  --bad: #b0281f;
+  --bad-soft: #fbe4e1;
+  --display: 'Manrope', system-ui, sans-serif;
+  --body: 'Public Sans', system-ui, sans-serif;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    --bg: #0e171d;
+    --surface: #152229;
+    --ink: #e3edf0;
+    --muted: #94a8b1;
+    --line: #283a43;
+    --accent: #4cbcc6;
+    --accent-soft: #143a40;
+    --nav: #0a1a21;
+    --nav-ink: #a9c3c9;
+    --nav-act: #173843;
+    --good: #6fd296;
+    --good-soft: #15331f;
+    --warn: #efbb5a;
+    --warn-soft: #382b12;
+    --bad: #f2877d;
+    --bad-soft: #3b1a17;
+    color-scheme: dark;
+  }
+}

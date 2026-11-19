@@ -26,3 +26,37 @@ Quality Management System for hospitals, piloted at SNHRC. The first module is *
 - No patient data, ever. Dummy data only in development.
 - No hard delete: Active/Inactive with a reason.
 - Every change goes to the audit log; permissions are checked on every API call.
+
+## Run it (development / pilot server)
+
+Requires Docker with Compose. Nothing else is installed on the host.
+
+```bash
+cp .env.example .env            # then edit every CHANGE-ME value
+docker compose --env-file .env -f deploy/docker-compose.yml up -d --build
+curl http://localhost:8080/api/v1/health      # {"status":"ok","version":"0.1.0","db":"up"}
+```
+
+Open `http://<server>:8080`. Only nginx (`WEB_PORT`) listens on the LAN; Postgres, the API and MinIO bind to `127.0.0.1`. All ports are configurable in `.env`.
+
+## Tests and linters
+
+Backend (real PostgreSQL in a throwaway container):
+
+```bash
+docker compose -f deploy/docker-compose.test.yml run --rm --build tests              # pytest
+docker compose -f deploy/docker-compose.test.yml run --rm tests ruff check .
+docker compose -f deploy/docker-compose.test.yml run --rm tests black --check .
+```
+
+Frontend (Node 24):
+
+```bash
+cd frontend && npm ci && npm run lint && npm run format:check && npm test && npm run build
+```
+
+CI (GitHub Actions) runs the same checks on every push and pull request.
+
+## Layout
+
+`backend/` FastAPI app · `frontend/` React + Vite · `deploy/` Compose, nginx, backups · `docs/` requirements, decisions, project state · `prototype/` approved UI reference · `.claude/agents/` agent team.

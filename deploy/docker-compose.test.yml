@@ -1,0 +1,31 @@
+# Throwaway stack for running backend tests against a real PostgreSQL.
+# Usage: docker compose -f deploy/docker-compose.test.yml run --rm --build tests [pytest args]
+# Dummy credentials, test only. Nothing is published to the host.
+name: qms-test
+
+services:
+  db:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: qms
+      POSTGRES_PASSWORD: qms_test_pw
+      POSTGRES_DB: qms_test
+    tmpfs:
+      - /var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U qms -d qms_test"]
+      interval: 2s
+      timeout: 3s
+      retries: 20
+
+  tests:
+    build:
+      context: ../backend
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql+psycopg://qms:qms_test_pw@db:5432/qms_test
+    working_dir: /app
+    user: root
+    command: ["pytest"]
