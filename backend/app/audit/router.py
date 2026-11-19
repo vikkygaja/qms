@@ -6,6 +6,7 @@ from fastapi import APIRouter, Depends, Query
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
+from app.audit import service as audit_service
 from app.audit.models import AuditLog
 from app.auth.deps import get_db, require_users
 from app.core.pagination import PageParams, page_of, page_params
@@ -50,20 +51,5 @@ def list_audit_log(
         .offset(page.offset)
         .limit(page.page_size)
     ).all()
-    items = [
-        {
-            "id": a.id,
-            "at": a.at,
-            "actor": (
-                {"id": u.id, "employee_id": u.employee_id, "full_name": u.full_name} if u else None
-            ),
-            "entity": a.entity,
-            "entity_id": a.entity_id,
-            "action": a.action,
-            "summary": a.summary,
-            "old_values": a.old_values,
-            "new_values": a.new_values,
-        }
-        for a, u in rows
-    ]
+    items = [audit_service.item(a, u) for a, u in rows]
     return page_of(items, total, page)

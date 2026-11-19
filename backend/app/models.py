@@ -3,6 +3,7 @@
 from app.audit.models import AuditLog
 from app.auth.models import UserSession
 from app.core.models import Tenant
+from app.linknurses.models import WardAssignment
 from app.masters.models import Department, Setting, StaffCategory, Ward
 from app.roles.models import Permission, Role, RolePermission
 from app.users.models import StatusHistory, User, UserRole
@@ -21,4 +22,5 @@ __all__ = [
     "UserRole",
     "UserSession",
     "Ward",
+    "WardAssignment",
 ]

@@ -41,6 +41,12 @@ class User(Base):
     locked_until: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     status: Mapped[str] = mapped_column(String(10), default=ACTIVE)
     last_login_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    # Link nurse profile (only filled for users with role `link_nurse`)
+    department_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("department.id"), nullable=True
+    )
+    link_nurse_from: Mapped[date | None] = mapped_column(Date, nullable=True)
+    who5_training_date: Mapped[date | None] = mapped_column(Date, nullable=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=utcnow, server_default=text("now()")
     )

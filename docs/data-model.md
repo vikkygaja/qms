@@ -83,6 +83,12 @@ Same conventions as Slice 2 (UUID ids, `tenant_id`, forced row-level security wi
 
 Status changes write `status_history` (entity_type `department`/`ward`/`staff_category`) and `audit_log`. Defaults seeded per tenant by `python -m app.cli init`: six staff categories (Doctor D, Nurse N, Technician T, Housekeeping H, Student S, Other HCW O) and the `kpi` setting. Wards and departments are NOT seeded in production; `python -m app.cli seed-demo` loads the prototype's demo data (development only).
 
+## Slice 4 changes (migration `0004`)
+
+- `app_user` gains nullable `department_id` (FK `department`), `link_nurse_from` (date), `who5_training_date` (date). Only users with role `link_nurse` fill them.
+- New table `ward_assignment`: id, tenant_id, user_id (FK `app_user`), ward_id (FK `ward`), from_date (date), to_date (date, null = current), created_at, created_by, ended_by. Constraints: `to_date >= from_date`; **partial unique index** `(user_id, ward_id) WHERE to_date IS NULL` so a nurse has at most one current row per ward; indexes on `(ward_id) WHERE to_date IS NULL` (who is in a ward) and `(user_id)`. Row-level security and grants as for every table. History is never deleted.
+- Status changes of link nurses write `status_history` (entity_type `link_nurse`) with the effective date.
+
 ## Seeded per tenant (by `python -m app.cli init`, idempotent)
 - Permissions (in matrix order): `masters`, `users`, `ln`, `record`, `review`, `targets`, `dash`, `alerts`, `reports`.
 - Roles: `admin` (Admin), `icn` (ICN), `qm` (Quality Manager), `link_nurse` (Link nurse), all `is_system`, with the default matrix from `docs/roles-permissions.md`.

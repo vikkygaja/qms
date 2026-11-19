@@ -12,6 +12,7 @@ from app.core.config import Settings
 from app.core.errors import ApiError, field_error
 from app.core.pagination import PageParams
 from app.core.security import hash_password, temporary_password
+from app.core.timeutil import today_ist
 from app.roles.models import Permission, Role, RolePermission
 from app.roles.seed import LINK_NURSE_KEY, USERS_PERMISSION
 from app.users.models import ACTIVE, INACTIVE, StatusHistory, User, UserRole
@@ -77,6 +78,12 @@ def list_users(
         stmt.order_by(User.employee_id).offset(page.offset).limit(page.page_size)
     ).all()
     return [user_out(u, r) for u, r in rows], total
+
+
+def _refuse_link_nurse(role: Role | None) -> None:
+    """Link nurses are managed on their own page, which also ends their ward assignments."""
+    if role and role.key == LINK_NURSE_KEY:
+        raise ApiError(409, "conflict", "Link nurses are managed on the Link nurses page.")
 
 
 def _active_admin_ids(db: Session) -> set[uuid.UUID]:
@@ -209,6 +216,7 @@ def set_status(
     db: Session, ctx: AuthContext, user_id: uuid.UUID, data: StatusChange, now: datetime
 ) -> dict:
     user, role = get_user(db, user_id)
+    _refuse_link_nurse(role)
     if user.status == data.status:
         raise ApiError(409, "conflict", f"This user is already {data.status}.")
     if data.status == INACTIVE:
@@ -224,7 +232,7 @@ def set_status(
             old_status=old_status,
             new_status=data.status,
             reason=data.reason,
-            effective_date=now.date(),
+            effective_date=today_ist(now),
             changed_by=ctx.user.id,
             changed_at=now,
         )
@@ -249,6 +257,7 @@ def reset_password(
     db: Session, settings: Settings, ctx: AuthContext, user_id: uuid.UUID, now: datetime
 ) -> tuple[dict, str]:
     user, role = get_user(db, user_id)
+    _refuse_link_nurse(role)
     if user.status != ACTIVE:
         raise ApiError(409, "conflict", "Make the user active before resetting the password.")
     temp = temporary_password()

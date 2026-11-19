@@ -99,6 +99,7 @@ class WardOut(BaseModel):
     department: DeptRef
     monthly_target: int
     status: str
+    link_nurse_count: int = 0
 
 
 class CategoryOut(BaseModel):

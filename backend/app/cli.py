@@ -21,6 +21,7 @@ from app.audit import service as audit
 from app.core.config import Settings, get_settings
 from app.core.db import make_engine, set_tenant
 from app.core.security import hash_password, password_policy_error, temporary_password
+from app.linknurses.demo import seed_demo_people
 from app.masters import service as masters_service
 from app.masters.demo import seed_demo
 from app.roles.models import Role
@@ -89,10 +90,14 @@ def _seed_demo(settings: Settings, force: bool) -> int:
             ensure_catalog(db, tenant)
             masters_service.ensure_defaults(db, tenant)
             depts, wards = seed_demo(db, tenant)
+            nurses, staff = seed_demo_people(db, tenant, settings)
             db.commit()
     finally:
         engine.dispose()
-    print(f"Demo data ready: {depts} departments and {wards} wards added.")
+    print(
+        f"Demo data ready: {depts} departments, {wards} wards, "
+        f"{nurses} link nurses and {staff} staff users added."
+    )
     return 0
 
 

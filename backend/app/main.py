@@ -10,6 +10,7 @@ from app.core import health
 from app.core.config import Settings, get_settings
 from app.core.db import make_engine, make_sessionmaker
 from app.core.errors import register_exception_handlers
+from app.linknurses.router import router as link_nurses_router
 from app.masters.files_router import router as masters_files_router
 from app.masters.router import router as masters_router
 from app.roles.router import router as roles_router
@@ -57,6 +58,7 @@ def create_app(
         audit_router,
         masters_router,
         masters_files_router,
+        link_nurses_router,
     )
     for router in routers:
         app.include_router(router, prefix=API_PREFIX)
