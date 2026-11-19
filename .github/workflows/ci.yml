@@ -1,0 +1,61 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  backend:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: qms
+          POSTGRES_PASSWORD: qms_test_pw # dummy, CI only
+          POSTGRES_DB: qms_test
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U qms -d qms_test"
+          --health-interval 5s --health-timeout 3s --health-retries 20
+    env:
+      DATABASE_URL: postgresql+psycopg://qms:qms_test_pw@localhost:5432/qms_test
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+      - run: uv python install 3.12
+      - run: uv sync --frozen
+      - run: uv run ruff check .
+      - run: uv run black --check .
+      - run: uv run pytest --cov --cov-report=term-missing
+
+  frontend:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run format:check
+      - run: npm test
+      - run: npm run build
+
+  compose:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate compose files
+        run: |
+          cp .env.example .env
+          docker compose --env-file .env -f deploy/docker-compose.yml config -q
+          docker compose -f deploy/docker-compose.test.yml config -q

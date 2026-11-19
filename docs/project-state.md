@@ -1,0 +1,40 @@
+# QMS — Project state (living document)
+
+Maintained by the `qms-brain` agent and the orchestrator. Update after every meaningful step. Last updated: 2026-11-19.
+
+## What we are building
+QMS: a multi-tenant hospital Quality Management System. Pilot: Sri Narayani Hospital & Research Centre (SNHRC), Vellore. Module 1 = Hand Hygiene (WHO 5 Moments observations, KPIs, alerts, monthly HICC reports). Later modules: NABH Readiness, Audits, CAPA, MRD Deficiency, Incidents, Documents.
+Users: Admin (IT), ICN, Quality Manager, ~30 link nurses. Authoritative sources: `docs/brief.md` (full brief), `prototype/index.html` (approved UI), `docs/decisions.md` (decisions 1-31+).
+
+## Environment
+- Dev machine: Mac (Node 24.14, npm 11, no Docker, no uv). Code and git live here.
+- Server: `qms@192.168.11.157`, Ubuntu 26.04.1, 4 CPU, 11 GB RAM, 1 TB disk, Docker 29.1.3 + Compose 2.40.3 installed (2026-11-19), key-based SSH from the Mac works, `ufw` active, sudo needs a password (user runs privileged commands). Plan: sync code with rsync, run Docker stack and backend tests on the server.
+- Server firewall: `ufw` enabled by the user on 2026-11-19; allows 22/tcp and 8080/tcp from 192.168.11.0/24 only. Docker-published ports bypass ufw, so Slice 9 must add DOCKER-USER rules; until then publish only nginx and bind Postgres/Redis/MinIO to 127.0.0.1 or the internal Docker network.
+- Repo: https://github.com/vikkygaja/qms.git, branch `main`; local folder tracks origin/main.
+
+## Workflow rules
+Per slice: plan + questions -> user OK -> tests first -> implement -> run all tests/linters -> summary -> commit message. Never guess requirements; record answers in `docs/decisions.md`. No push, no commits to `main` without the user's instruction.
+
+## Agent team (`.claude/agents/`)
+ux-designer, dba-backup, security-auditor (read-only), tester-committer, frontend-dev, fable-master (escalations), qms-brain (this context keeper).
+
+## Progress
+- [x] Docs created from the brief (CLAUDE.md, docs/*).
+- [x] Slice 1 plan approved by the user ("approved with recommendations") on 2026-11-19.
+- [x] Server: Docker installed and verified.
+- [x] Branch `slice-1-skeleton` created.
+- [x] Slice 1 implementation (2026-11-19): backend (FastAPI health, error format, config, Alembic baseline, RQ worker stub) 17 tests passing on real Postgres, ruff + black clean, 86% coverage; frontend (Vite/React shell, health badge) 10 tests passing, eslint/prettier/tsc build clean; Compose stack (db, redis, api, worker, web, nginx) running on the server at http://192.168.11.157:8080; GitHub Actions CI written (not yet run: nothing pushed). MinIO service defined but disabled (image unavailable, see decisions.md open items).
+- [ ] Slice 1: user review, then merge via PR once CI is green.
+- [ ] Slices 2-9 (see CLAUDE.md).
+
+## How to run things (all on the server, code is rsynced from the Mac)
+- Sync: `rsync -az --exclude .git --exclude node_modules --exclude .venv --exclude dist ./ qms@192.168.11.157:~/qms/`
+- Backend tests: `docker compose -f deploy/docker-compose.test.yml run --rm --build tests`
+- Frontend checks: run in a `node:24` container (see README).
+- Stack: `docker compose --env-file .env -f deploy/docker-compose.yml up -d --build` (server `.env` holds random secrets, never committed).
+
+## Open items
+See "Open items" in `docs/decisions.md` (draft status on session entry, session-number reset, printable sheet permission). Pending for later: open firewall port 8080 to the LAN subnet; confirm LAN subnet.
+
+## Notes for the next session
+- Slice 1 choices: FastAPI + SQLAlchemy 2 + Alembic, RQ worker stub, React/Vite shell with CSS modules, Compose (db, redis, minio, api, worker, web, nginx), GitHub Actions CI, real Postgres for tests, `uv` + npm.
