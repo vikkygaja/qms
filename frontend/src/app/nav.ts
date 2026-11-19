@@ -46,6 +46,37 @@ export const NAV: NavEntry[] = [
   },
   { kind: 'link', path: '/hand-hygiene/link-nurses', label: 'Link nurses', sub: true, perm: 'ln' },
   { kind: 'link', path: '/hand-hygiene/sheet', label: 'Printable sheet', sub: true },
+  { kind: 'group', label: 'Masters' },
+  { kind: 'link', path: '/admin/masters', label: 'Overview', sub: true, perm: 'masters' },
+  { kind: 'link', path: '/admin/masters/wards', label: 'Wards', sub: true, perm: 'masters' },
+  {
+    kind: 'link',
+    path: '/admin/masters/departments',
+    label: 'Departments',
+    sub: true,
+    perm: 'masters',
+  },
+  {
+    kind: 'link',
+    path: '/admin/masters/staff-categories',
+    label: 'Staff categories',
+    sub: true,
+    perm: 'masters',
+  },
+  { kind: 'link', path: '/admin/masters/kpi', label: 'KPI thresholds', sub: true, perm: 'masters' },
+  {
+    kind: 'link',
+    path: '/admin/masters/import-export',
+    label: 'Import & export',
+    sub: true,
+    perm: 'masters',
+  },
+  { kind: 'group', label: 'Platform' },
+  { kind: 'link', path: '/reports', label: 'Reports centre', perm: 'reports' },
+  { kind: 'link', path: '/admin/users', label: 'Users', perm: 'users' },
+  { kind: 'link', path: '/admin/roles', label: 'Roles & permissions', perm: 'users' },
+  { kind: 'link', path: '/admin/audit-log', label: 'Audit log', perm: 'users' },
+
   { kind: 'group', label: 'Other modules' },
   ...[
     'NABH Readiness',
@@ -55,12 +86,6 @@ export const NAV: NavEntry[] = [
     'Incidents',
     'Documents',
   ].map((label): NavSoon => ({ kind: 'soon', label })),
-  { kind: 'group', label: 'Platform' },
-  { kind: 'link', path: '/reports', label: 'Reports centre', perm: 'reports' },
-  { kind: 'link', path: '/admin/users', label: 'Users', perm: 'users' },
-  { kind: 'link', path: '/admin/roles', label: 'Roles & permissions', perm: 'users' },
-  { kind: 'link', path: '/admin/audit-log', label: 'Audit log', perm: 'users' },
-  { kind: 'link', path: '/admin/masters', label: 'Masters', perm: 'masters' },
 ];
 
 export const NAV_LINKS = NAV.filter((e): e is NavLinkItem => e.kind === 'link');
@@ -75,4 +100,25 @@ export function visibleNav(can: (p: string) => boolean): NavEntry[] {
     const next = allowed[i + 1];
     return next !== undefined && next.kind !== 'group';
   });
+}
+
+export interface NavSection {
+  label: string;
+  items: (NavLinkItem | NavSoon)[];
+}
+
+/** Menu split for the accordion: standalone links first, then groups that still have visible items. */
+export function navSections(can: (p: string) => boolean): {
+  top: NavLinkItem[];
+  groups: NavSection[];
+} {
+  const top: NavLinkItem[] = [];
+  const groups: NavSection[] = [];
+  for (const e of NAV) {
+    if (e.kind === 'group') groups.push({ label: e.label, items: [] });
+    else if (e.kind === 'link' && e.perm && !can(e.perm)) continue;
+    else if (groups.length === 0 && e.kind === 'link') top.push(e);
+    else groups[groups.length - 1]?.items.push(e);
+  }
+  return { top, groups: groups.filter((g) => g.items.length > 0) };
 }

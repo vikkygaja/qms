@@ -133,3 +133,10 @@ export const WARD_MICU = {
 };
 export const CAT_DOCTOR = { id: 'c1', name: 'Doctor', code: 'D', status: 'Active' as const };
 export const CAT_NURSE = { id: 'c2', name: 'Nurse', code: 'N', status: 'Active' as const };
+
+export const SUMMARY = {
+  departments: { active: 11, inactive: 1 },
+  wards: { active: 20, inactive: 2, monthly_target_total: 1000 },
+  staff_categories: { active: 6, inactive: 0 },
+  kpi: { green: 90, amber: 80, inactive_days: 10 },
+};

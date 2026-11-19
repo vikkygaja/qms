@@ -6,6 +6,7 @@ import type {
   ItemStatus,
   KpiSettings,
   MasterKind,
+  MastersSummary,
   Page,
   StaffCategory,
   Ward,
@@ -16,6 +17,9 @@ export interface MasterListParams {
   q?: string;
   page?: number;
   page_size?: number;
+  sort?: string;
+  order?: 'asc' | 'desc';
+  department_id?: string; // wards only
 }
 export interface NewDepartment {
   name: string;
@@ -50,6 +54,8 @@ export const setMasterStatus = <T>(
   status: ItemStatus,
   reason: string,
 ) => post<T>(`/${kind}/${id}/status`, { status, reason });
+
+export const getMastersSummary = () => get<MastersSummary>('/masters/summary');
 
 export const getKpiSettings = () => get<KpiSettings>('/settings/kpi');
 export const saveKpiSettings = (s: KpiSettings) => put<KpiSettings>('/settings/kpi', s);

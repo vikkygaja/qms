@@ -1,19 +1,28 @@
+import type { ReactNode } from 'react';
+
 export function Pagination({
   page,
   pageSize,
   total,
   onChange,
+  label,
 }: {
   page: number;
   pageSize: number;
   total: number;
   onChange: (page: number) => void;
+  /** Replaces the default "Page x of y · n records" text. */
+  label?: ReactNode;
 }) {
   const pages = Math.max(1, Math.ceil(total / pageSize));
   return (
     <nav className="row between" aria-label="Pagination">
       <span className="small muted">
-        Page {page} of {pages} · {total} {total === 1 ? 'record' : 'records'}
+        {label ?? (
+          <>
+            Page {page} of {pages} · {total} {total === 1 ? 'record' : 'records'}
+          </>
+        )}
       </span>
       <span className="row">
         <button

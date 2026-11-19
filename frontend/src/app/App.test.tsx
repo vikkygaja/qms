@@ -17,7 +17,7 @@ describe('App shell', () => {
   it('renders the menu groups and every link for an admin', async () => {
     await open();
     const n = within(nav());
-    for (const g of ['Hand Hygiene', 'Other modules', 'Platform']) {
+    for (const g of ['Hand Hygiene', 'Masters', 'Platform', 'Other modules']) {
       expect(n.getByText(g)).toBeInTheDocument();
     }
     for (const l of [
@@ -32,7 +32,12 @@ describe('App shell', () => {
       'Users',
       'Roles & permissions',
       'Audit log',
-      'Masters',
+      'Overview',
+      'Wards',
+      'Departments',
+      'Staff categories',
+      'KPI thresholds',
+      'Import & export',
     ]) {
       expect(n.getByRole('link', { name: l })).toBeInTheDocument();
     }
@@ -42,9 +47,10 @@ describe('App shell', () => {
     await open(icnMe);
     const n = within(nav());
     expect(n.getByRole('link', { name: 'Link nurses' })).toBeInTheDocument();
-    for (const l of ['Users', 'Roles & permissions', 'Audit log', 'Masters']) {
+    for (const l of ['Users', 'Roles & permissions', 'Audit log', 'Wards', 'Import & export']) {
       expect(n.queryByRole('link', { name: l })).not.toBeInTheDocument();
     }
+    expect(n.queryByText('Masters')).not.toBeInTheDocument();
   });
 
   it('relabels Sessions and Dashboard for link nurses and hides the rest', async () => {

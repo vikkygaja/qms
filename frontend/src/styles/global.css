@@ -33,6 +33,14 @@ textarea {
   outline: 3px solid var(--accent);
   outline-offset: 2px;
 }
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
 .card {
   background: var(--surface);
   border: 1px solid var(--line);
@@ -71,7 +79,8 @@ input[type='text'],
 input[type='password'],
 input[type='date'],
 input[type='search'],
-input[type='number'] {
+input[type='number'],
+textarea {
   background: var(--bg);
   border: 1px solid var(--line);
   border-radius: 8px;

@@ -4,7 +4,12 @@ import { BrowserRouter, Route, Routes } from 'react-router-dom';
 import { AuthProvider } from '../auth/AuthProvider';
 import { PublicOnly, RequireAuth, RequirePermission } from '../auth/guards';
 import { AuditLogPage } from '../pages/admin/AuditLogPage';
-import { MastersPage } from '../pages/admin/MastersPage';
+import { DepartmentsPage } from '../pages/admin/masters/DepartmentsPage';
+import { ImportExportPage } from '../pages/admin/masters/ImportExportPage';
+import { KpiPage } from '../pages/admin/masters/KpiPage';
+import { MastersOverviewPage } from '../pages/admin/masters/MastersOverviewPage';
+import { StaffCategoriesPage } from '../pages/admin/masters/StaffCategoriesPage';
+import { WardsPage } from '../pages/admin/masters/WardsPage';
 import { RolesPage } from '../pages/admin/RolesPage';
 import { UsersPage } from '../pages/admin/UsersPage';
 import { SheetPage } from '../pages/hand-hygiene/SheetPage';
@@ -18,7 +23,12 @@ const PAGES: Record<string, ReactNode> = {
   '/admin/users': <UsersPage />,
   '/admin/roles': <RolesPage />,
   '/admin/audit-log': <AuditLogPage />,
-  '/admin/masters': <MastersPage />,
+  '/admin/masters': <MastersOverviewPage />,
+  '/admin/masters/wards': <WardsPage />,
+  '/admin/masters/departments': <DepartmentsPage />,
+  '/admin/masters/staff-categories': <StaffCategoriesPage />,
+  '/admin/masters/kpi': <KpiPage />,
+  '/admin/masters/import-export': <ImportExportPage />,
   '/hand-hygiene/sheet': <SheetPage />,
 };
 

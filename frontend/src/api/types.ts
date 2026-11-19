@@ -114,3 +114,10 @@ export interface ImportReport {
   rows: ImportRow[];
   truncated: boolean;
 }
+
+export interface MastersSummary {
+  departments: { active: number; inactive: number };
+  wards: { active: number; inactive: number; monthly_target_total: number };
+  staff_categories: { active: number; inactive: number };
+  kpi: KpiSettings;
+}

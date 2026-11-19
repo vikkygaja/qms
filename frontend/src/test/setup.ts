@@ -5,6 +5,7 @@ import { setCsrfToken, setUnauthorizedHandler } from '../api/client';
 
 afterEach(() => {
   cleanup();
+  window.localStorage.clear();
   vi.unstubAllGlobals();
   setCsrfToken(null);
   setUnauthorizedHandler(null);
