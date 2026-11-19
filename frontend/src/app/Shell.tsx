@@ -1,9 +1,12 @@
 import { NavLink, Outlet } from 'react-router-dom';
 import { HealthBadge } from '../components/HealthBadge';
-import { NAV } from './nav';
+import { useAuth } from '../auth/AuthProvider';
+import { LINK_NURSE_ROLE, visibleNav } from './nav';
 import styles from './Shell.module.css';
 
 export function Shell() {
+  const { user, can, logout } = useAuth();
+  const isLinkNurse = user?.role.key === LINK_NURSE_ROLE;
   return (
     <>
       <a className={styles.skip} href="#main">
@@ -14,7 +17,7 @@ export function Shell() {
           <div className={styles.logo}>
             QMS<small>Sri Narayani Hospital</small>
           </div>
-          {NAV.map((e) => {
+          {visibleNav(can).map((e) => {
             if (e.kind === 'group') {
               return (
                 <div key={`g-${e.label}`} className={styles.group}>
@@ -41,7 +44,7 @@ export function Shell() {
                 end
                 className={`${styles.item} ${e.sub ? styles.sub : ''}`}
               >
-                {e.label}
+                {isLinkNurse && e.lnLabel ? e.lnLabel : e.label}
               </NavLink>
             );
           })}
@@ -49,7 +52,15 @@ export function Shell() {
         <div className={styles.main}>
           <header className={styles.top}>
             <strong>Hospital Quality Management System</strong>
-            <HealthBadge />
+            <div className={styles.who}>
+              <span>
+                {user?.full_name} · {user?.role.name}
+              </span>
+              <button type="button" className="btn ghost sm" onClick={() => void logout()}>
+                Sign out
+              </button>
+              <HealthBadge />
+            </div>
           </header>
           <main id="main" tabIndex={-1} className={styles.content}>
             <Outlet />

@@ -45,3 +45,157 @@ textarea {
 .muted {
   color: var(--muted);
 }
+
+/* Shared UI pieces taken from the prototype */
+.row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+}
+.between {
+  justify-content: space-between;
+}
+.small {
+  font-size: 0.82rem;
+}
+label.f {
+  display: grid;
+  gap: 3px;
+  font-size: 0.8rem;
+  color: var(--muted);
+  font-weight: 600;
+}
+select,
+input[type='text'],
+input[type='password'],
+input[type='date'],
+input[type='search'] {
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 7px 9px;
+}
+.btn {
+  border: 1px solid var(--accent);
+  background: var(--accent);
+  color: var(--surface);
+  border-radius: 8px;
+  padding: 8px 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.btn.ghost {
+  background: transparent;
+  color: var(--accent);
+}
+.btn.sm {
+  padding: 4px 10px;
+  font-size: 0.82rem;
+}
+.btn.danger {
+  border-color: var(--bad);
+  background: transparent;
+  color: var(--bad);
+}
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.pill {
+  display: inline-block;
+  border-radius: 99px;
+  padding: 1px 9px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+.p-good {
+  background: var(--good-soft);
+  color: var(--good);
+}
+.p-warn {
+  background: var(--warn-soft);
+  color: var(--warn);
+}
+.p-bad {
+  background: var(--bad-soft);
+  color: var(--bad);
+}
+.p-n {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+.err {
+  color: var(--bad);
+  font-size: 0.82rem;
+  margin: 0;
+}
+.tw {
+  overflow-x: auto;
+}
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+th,
+td {
+  text-align: left;
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--line);
+  vertical-align: top;
+}
+th {
+  font-size: 0.78rem;
+  color: var(--muted);
+}
+code {
+  font-family: ui-monospace, Consolas, monospace;
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  padding: 0 5px;
+  font-size: 0.85em;
+}
+.panel {
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 12px;
+  background: var(--bg);
+  display: grid;
+  gap: 10px;
+}
+.secret {
+  border: 1px solid var(--good);
+  background: var(--good-soft);
+  color: var(--ink);
+  border-radius: 10px;
+  padding: 12px;
+  display: grid;
+  gap: 6px;
+}
+.formgrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 10px;
+}
+.toast {
+  position: sticky;
+  bottom: 12px;
+  justify-self: center;
+  background: var(--ink);
+  color: var(--surface);
+  padding: 8px 14px;
+  border-radius: 8px;
+  font-size: 0.88rem;
+}
+.toast[hidden] {
+  display: none;
+}
+.matrix th.c,
+.matrix td.c {
+  text-align: center;
+}
+.matrix input {
+  width: 18px;
+  height: 18px;
+}
