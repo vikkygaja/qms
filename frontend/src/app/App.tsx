@@ -12,6 +12,7 @@ import { StaffCategoriesPage } from '../pages/admin/masters/StaffCategoriesPage'
 import { WardsPage } from '../pages/admin/masters/WardsPage';
 import { RolesPage } from '../pages/admin/RolesPage';
 import { UsersPage } from '../pages/admin/UsersPage';
+import { LinkNursesPage } from '../pages/hand-hygiene/link-nurses/LinkNursesPage';
 import { SheetPage } from '../pages/hand-hygiene/SheetPage';
 import { LoginPage } from '../pages/auth/LoginPage';
 import { SetPasswordPage } from '../pages/auth/SetPasswordPage';
@@ -29,6 +30,7 @@ const PAGES: Record<string, ReactNode> = {
   '/admin/masters/staff-categories': <StaffCategoriesPage />,
   '/admin/masters/kpi': <KpiPage />,
   '/admin/masters/import-export': <ImportExportPage />,
+  '/hand-hygiene/link-nurses': <LinkNursesPage />,
   '/hand-hygiene/sheet': <SheetPage />,
 };
 

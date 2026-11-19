@@ -6,6 +6,25 @@ from app.audit.models import AuditLog
 from app.users.models import User
 
 
+def item(entry: AuditLog, actor: User | None) -> dict:
+    """API shape of one audit row (shared by /audit-log and /link-nurses/recent-changes)."""
+    return {
+        "id": entry.id,
+        "at": entry.at,
+        "actor": (
+            {"id": actor.id, "employee_id": actor.employee_id, "full_name": actor.full_name}
+            if actor
+            else None
+        ),
+        "entity": entry.entity,
+        "entity_id": entry.entity_id,
+        "action": entry.action,
+        "summary": entry.summary,
+        "old_values": entry.old_values,
+        "new_values": entry.new_values,
+    }
+
+
 def record(
     db: Session,
     *,

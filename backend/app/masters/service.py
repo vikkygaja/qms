@@ -9,8 +9,10 @@ from app.audit import service as audit
 from app.auth.deps import AuthContext
 from app.core.errors import ApiError, field_error
 from app.core.pagination import PageParams
+from app.core.timeutil import today_ist
+from app.linknurses.models import WardAssignment
 from app.masters.models import Department, Setting, StaffCategory, Ward
-from app.users.models import ACTIVE, StatusHistory
+from app.users.models import ACTIVE, INACTIVE, StatusHistory
 from app.users.schemas import StatusChange
 
 KPI_KEY = "kpi"
@@ -31,8 +33,31 @@ def department_out(d: Department, ward_count: int) -> dict:
     return {"id": d.id, "name": d.name, "status": d.status, "ward_count": ward_count}
 
 
-def ward_out(w: Ward, dept: Department) -> dict:
+def link_nurse_counts(db: Session) -> dict[uuid.UUID, int]:
+    """Link nurses currently assigned to each ward."""
+    return dict(
+        db.execute(
+            select(WardAssignment.ward_id, func.count())
+            .where(WardAssignment.to_date.is_(None))
+            .group_by(WardAssignment.ward_id)
+        ).all()
+    )
+
+
+def nurse_count(db: Session, ward_id: uuid.UUID) -> int:
+    return (
+        db.scalar(
+            select(func.count()).where(
+                WardAssignment.ward_id == ward_id, WardAssignment.to_date.is_(None)
+            )
+        )
+        or 0
+    )
+
+
+def ward_out(w: Ward, dept: Department, nurses: int = 0) -> dict:
     return {
+        "link_nurse_count": nurses,
         "id": w.id,
         "name": w.name,
         "department": {"id": dept.id, "name": dept.name},
@@ -110,7 +135,7 @@ def _apply_status(
             old_status=old,
             new_status=data.status,
             reason=data.reason,
-            effective_date=now.date(),
+            effective_date=today_ist(now),
             changed_by=ctx.user.id,
             changed_at=now,
         )
@@ -262,7 +287,8 @@ def list_wards(
         "status": Ward.status,
     }[sort]
     rows, total = _page(db, stmt, page, *_ordered(column, order, Ward.name))
-    return [ward_out(w, d) for w, d in rows], total
+    counts = link_nurse_counts(db)
+    return [ward_out(w, d, counts.get(w.id, 0)) for w, d in rows], total
 
 
 def create_ward(db: Session, ctx: AuthContext, data) -> dict:
@@ -316,16 +342,21 @@ def update_ward(db: Session, ctx: AuthContext, ward_id: uuid.UUID, data) -> dict
         ward.department_id, dept = new_dept.id, new_dept
     audit_update(db, ctx, "ward", "ward", ward, old, new)
     db.commit()
-    return ward_out(ward, dept)
+    return ward_out(ward, dept, nurse_count(db, ward.id))
 
 
 def set_ward_status(
     db: Session, ctx: AuthContext, ward_id: uuid.UUID, data: StatusChange, now: datetime
 ) -> dict:
     ward, dept = get_ward(db, ward_id)
-    # Slice 4 adds: a ward with current link nurses cannot become Inactive.
+    if data.status == INACTIVE and ward.status != INACTIVE:
+        assigned = nurse_count(db, ward.id)
+        if assigned:
+            raise ApiError(
+                409, "conflict", f"Move this ward's link nurses first ({assigned} assigned)."
+            )
     _apply_status(db, ctx, ward, "ward", "ward", data, now)
-    return ward_out(ward, dept)
+    return ward_out(ward, dept, nurse_count(db, ward.id))
 
 
 # ---------- staff categories ----------

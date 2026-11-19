@@ -1,5 +1,6 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Fragment, useState, type FormEvent } from 'react';
+import { Link } from 'react-router-dom';
 import { ApiError } from '../../api/client';
 import type { User } from '../../api/types';
 import {
@@ -11,6 +12,7 @@ import {
   setUserStatus,
   updateUser,
 } from '../../api/users';
+import { useAuth } from '../../auth/AuthProvider';
 import { LINK_NURSE_ROLE } from '../../app/nav';
 import { AuditTable } from '../../components/AuditTable';
 import { Pagination } from '../../components/Pagination';
@@ -29,6 +31,7 @@ type FormState = { mode: 'add' } | { mode: 'edit'; user: User } | null;
 
 export function UsersPage() {
   const qc = useQueryClient();
+  const { can } = useAuth();
   const toast = useToast();
   const [draftQ, setDraftQ] = useState('');
   const [q, setQ] = useState('');
@@ -268,7 +271,18 @@ export function UsersPage() {
                       </td>
                       <td>
                         {managed ? (
-                          <span className="small muted">Managed by ICN (Link nurses page)</span>
+                          <span className="row">
+                            <span className="small muted">Managed by ICN (Link nurses page)</span>
+                            {can('ln') && (
+                              <Link
+                                className="small"
+                                to={`/hand-hygiene/link-nurses?q=${encodeURIComponent(u.employee_id)}&status=all`}
+                                aria-label={`Open ${u.full_name} on the Link nurses page`}
+                              >
+                                Open Link nurses
+                              </Link>
+                            )}
+                          </span>
                         ) : (
                           <span className="row">
                             <button

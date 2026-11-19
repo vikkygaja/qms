@@ -10,6 +10,7 @@ export function ConfirmDialog({
   reasonLabel,
   confirmLabel,
   danger,
+  dateField,
   onConfirm,
   onCancel,
 }: {
@@ -19,10 +20,13 @@ export function ConfirmDialog({
   reasonLabel?: string;
   confirmLabel: string;
   danger?: boolean;
-  onConfirm: (reason: string) => Promise<void>;
+  /** When set, a required date (not after `max`) is asked for and passed to onConfirm. */
+  dateField?: { label: string; max: string; defaultValue: string };
+  onConfirm: (reason: string, date?: string) => Promise<void>;
   onCancel: () => void;
 }) {
   const [reason, setReason] = useState('');
+  const [date, setDate] = useState(dateField?.defaultValue ?? '');
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -30,10 +34,14 @@ export function ConfirmDialog({
   async function submit(e: FormEvent) {
     e.preventDefault();
     if (reasonLabel && !reason.trim()) return setError('Enter a reason.');
+    if (dateField) {
+      if (!date) return setError('Choose a date.');
+      if (date > dateField.max) return setError('The date cannot be in the future.');
+    }
     setError('');
     setBusy(true);
     try {
-      await onConfirm(reason.trim());
+      await onConfirm(reason.trim(), dateField ? date : undefined);
     } catch (err) {
       setError(err instanceof ApiError ? err.message : 'Something went wrong. Try again.');
       setBusy(false);
@@ -73,6 +81,18 @@ export function ConfirmDialog({
                   value={reason}
                   onChange={(e) => setReason(e.target.value)}
                   aria-invalid={!!error}
+                />
+              </label>
+            )}
+            {dateField && (
+              <label className="f" htmlFor="confirm-date">
+                {dateField.label}
+                <input
+                  id="confirm-date"
+                  type="date"
+                  max={dateField.max}
+                  value={date}
+                  onChange={(e) => setDate(e.target.value)}
                 />
               </label>
             )}

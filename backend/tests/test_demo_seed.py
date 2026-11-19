@@ -58,6 +58,62 @@ def test_seed_demo_force_overrides_the_guard(cli_env, owner_engine):
     assert counts(owner_engine)[1] == 20
 
 
+def test_seed_demo_loads_the_link_nurses_and_demo_users(cli_env, owner_engine):
+    cli_env.setenv("ENV", "development")
+    assert main(["seed-demo"]) == 0
+    with owner_engine.connect() as c:
+        q = lambda sql: c.execute(text(sql)).scalar()  # noqa: E731
+        nurses = (
+            "FROM app_user u JOIN user_role ur ON ur.user_id=u.id JOIN role r ON r.id=ur.role_id"
+            " WHERE r.key='link_nurse'"
+        )
+        assert q(f"SELECT count(*) {nurses}") == 30
+        assert q(f"SELECT count(*) {nurses} AND u.status='Inactive'") == 1
+        assert q("SELECT count(*) FROM ward_assignment") == 32
+        assert q("SELECT count(*) FROM ward_assignment WHERE to_date IS NULL") == 30
+        # Priya R.: moved to MICU in June, added SICU in September (prototype story)
+        priya = c.execute(
+            text(
+                "SELECT w.name, a.from_date, a.to_date FROM ward_assignment a"
+                " JOIN ward w ON w.id=a.ward_id JOIN app_user u ON u.id=a.user_id"
+                " WHERE u.employee_id='SN1001' ORDER BY a.from_date"
+            )
+        ).all()
+        assert [(r[0], str(r[1]), str(r[2])) for r in priya] == [
+            ("Ward 2 – Surgery", "2026-01-05", "2026-05-31"),
+            ("MICU", "2026-06-01", "None"),
+            ("SICU", "2026-09-01", "None"),
+        ]
+        reason = q("SELECT reason FROM status_history WHERE entity_type='link_nurse'")
+        assert reason == "Moved to OT as scrub nurse"
+        # every ward has at least one current link nurse
+        assert (
+            q(
+                "SELECT count(*) FROM ward w WHERE NOT EXISTS (SELECT 1 FROM ward_assignment a"
+                " WHERE a.ward_id=w.id AND a.to_date IS NULL)"
+            )
+            == 0
+        )
+        assert q("SELECT count(*) FROM app_user WHERE employee_id IN ('ICN001','QM001')") == 2
+
+
+def test_demo_users_can_sign_in_and_the_second_run_adds_nothing(cli_env, api, owner_engine):
+    from tests.helpers import login
+
+    cli_env.setenv("ENV", "development")
+    main(["seed-demo"])
+    for emp, role in (("SN1001", "link_nurse"), ("ICN001", "icn"), ("QM001", "qm")):
+        r = login(api, emp, "Demo-1234")
+        assert r.status_code == 200, (emp, r.text)
+        assert r.json()["user"]["role"]["key"] == role
+        assert r.json()["user"]["must_change_password"] is False
+    assert login(api, "SN1030", "Demo-1234").status_code == 403  # the inactive nurse
+    main(["seed-demo"])
+    with owner_engine.connect() as c:
+        assert c.execute(text("SELECT count(*) FROM ward_assignment")).scalar() == 32
+        assert c.execute(text("SELECT count(*) FROM app_user")).scalar() == 32
+
+
 def test_demo_wards_are_visible_through_the_api(cli_env, api, make_user):
     cli_env.setenv("ENV", "development")
     main(["seed-demo"])

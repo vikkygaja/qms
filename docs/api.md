@@ -166,3 +166,50 @@ Audit: entities `department`, `ward`, `staff_category` (actions `create`, `updat
   "staff_categories": { "active": 6, "inactive": 0 },
   "kpi": { "green": 90, "amber": 80, "inactive_days": 10 } }
 ```
+
+---
+
+# Slice 4 contract: link nurses
+
+Base `/api/v1`. **Every endpoint here needs permission `ln`** (held by ICN and Admin by default, per the brief's matrix; QM and link nurses do not have it). Same CSRF/error rules. Nothing is deleted.
+
+## Shapes
+```jsonc
+// LinkNurse (list item)
+{ "id": "uuid", "employee_id": "SN1001", "full_name": "Priya R.", "designation": "Sister",
+  "department": { "id": "uuid", "name": "Critical Care" },
+  "mobile": "9840010000", "email": "",
+  "link_nurse_from": "2026-01-05", "who5_training_date": "2026-01-10" | null,
+  "status": "Active" | "Inactive", "must_change_password": false,
+  "wards": [ { "id": "uuid", "name": "MICU" }, { "id": "uuid", "name": "SICU" } ],   // CURRENT wards only
+  "sessions_this_month": 0,          // placeholder until Slice 5/6
+  "last_entry_date": null,           // placeholder until Slice 5/6 (ISO date)
+  "no_entry_flag": false }           // placeholder until Slice 5/6 ("no entry in N days")
+
+// LinkNurseDetail = LinkNurse + history
+{ ...LinkNurse,
+  "assignments": [ { "ward": { "id": "uuid", "name": "MICU" }, "from_date": "2026-06-01", "to_date": null } ],   // newest first, includes ended ones
+  "status_history": [ { "old_status": "Active", "new_status": "Inactive", "reason": "...", "effective_date": "2026-10-31",
+                        "changed_at": "2026-10-31T10:40:00Z", "changed_by": { "id": "uuid", "full_name": "Sr. Mary J." } | null } ] }  // newest first
+```
+
+## Endpoints
+| Method + path | Request | Success | Notes |
+|---|---|---|---|
+| `GET /link-nurses` | query `q` (name or employee ID), `ward_id` (nurses currently assigned to it), `status`, `sort` (`name` default, `employee_id`, `status`), `order`, `page`, `page_size` (default 50, max 200) | `200 Page<LinkNurse>` | |
+| `POST /link-nurses` | `{employee_id, full_name, designation, department_id, mobile, email?, link_nurse_from, who5_training_date?, ward_ids: [uuid, ...]}` | `201 {link_nurse: LinkNurseDetail, temporary_password}` | Creates the user (role `link_nurse`) AND the assignments in one step. `employee_id` 3-20 chars `[A-Za-z0-9_-]`, stored upper-case, unique across ALL users (409 "This employee ID already has a login."). `mobile` exactly 10 digits. `department_id` must be an Active department. `ward_ids` needs at least 1 (422 field `ward_ids`), all must be Active wards. `link_nurse_from` is an ISO date. Assignments start on `link_nurse_from`. Password shown once. |
+| `GET /link-nurses/{id}` | | `200 LinkNurseDetail` | 404 if the id is not a link nurse |
+| `PATCH /link-nurses/{id}` | any of `{full_name, designation, department_id, mobile, email, link_nurse_from, who5_training_date}` | `200 LinkNurseDetail` | Employee ID cannot change. Changing wards is a separate call. Audited with old and new values. |
+| `PUT /link-nurses/{id}/wards` | `{ward_ids: [uuid, ...]}` | `200 LinkNurseDetail` | The new full set of current wards. Removed wards get `to_date` = today; added wards get a new row from today; unchanged wards are untouched. `409` if the nurse is Inactive ("Make the link nurse active first."); `422` if the set is empty ("Keep at least one ward, or make the link nurse inactive instead.") or a ward is not Active. No change → 200 with no audit entry. |
+| `POST /link-nurses/{id}/status` | `{status, reason, effective_date?}` | `200 LinkNurseDetail` | `reason` required (422). `effective_date` ISO date, default today, not in the future (422). Inactive: ends ALL current assignments on that date, ends their sessions, blocks login. Active: does NOT restore wards. Same status → `409`. |
+| `POST /link-nurses/{id}/reset-password` | | `200 {link_nurse: LinkNurseDetail, temporary_password}` | Active nurses only (`409` otherwise). Forces a change, ends their sessions, clears any lockout. |
+| `GET /link-nurses/recent-changes?limit=8` | `limit` 1-50 (default 8) | `200 [AuditEntry]` | The latest audit entries about link nurses (entity `link_nurse`), newest first, same shape as `/audit-log` items. Permission `ln` (the full audit log needs `users`). |
+
+## Changes to earlier endpoints
+- `GET /wards` items and `POST/PATCH/status` responses gain `link_nurse_count` (number of nurses currently assigned).
+- `POST /wards/{id}/status` to `Inactive` returns `409 conflict` "Move this ward's link nurses first (N assigned)." while any link nurse is currently assigned.
+- `POST /users/{id}/status` and `POST /users/{id}/reset-password` return `409 conflict` "Link nurses are managed on the Link nurses page." for link nurse users (they would bypass ward assignment rules).
+- Users list still includes link nurses (role `link_nurse`) so the Users page can show them read-only.
+
+## Audit
+Entity `link_nurse` (entity_id = the user id) with actions `create`, `update`, `ward_change`, `status_change`, `password_reset`. Summaries read like "Assigned MICU, SICU to Priya R. (SN1001)", "Ended OPD for ...", "Set Preethi Z. (SN1030) Inactive: Moved to OT as scrub nurse". Passwords are never stored.
