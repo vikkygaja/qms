@@ -20,6 +20,7 @@ from app.cli import run_migrations
 from app.core.config import Settings
 from app.core.security import hash_password
 from app.main import create_app
+from app.masters import service as masters_service
 from app.roles.models import Role
 from app.roles.seed import ensure_catalog, ensure_tenant
 from app.users.models import User, UserRole
@@ -105,6 +106,7 @@ def tenant_id(migrated, owner_engine) -> uuid.UUID:
     with Session(owner_engine) as s:
         tenant = ensure_tenant(s, TEST_TENANT, "Test Hospital")
         ensure_catalog(s, tenant)
+        masters_service.ensure_defaults(s, tenant)
         s.commit()
         return tenant.id
 

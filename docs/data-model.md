@@ -70,6 +70,19 @@ Physical names `app_user` and `user_session` avoid the reserved words `user` and
 - `qms_app` has `SELECT, INSERT` on `audit_log` only (no UPDATE, DELETE, TRUNCATE).
 - Trigger `audit_log_no_change` raises on any UPDATE or DELETE, even for the owner.
 
+## Slice 3 tables (migration `0003`)
+
+Same conventions as Slice 2 (UUID ids, `tenant_id`, forced row-level security with the `tenant_isolation` policy, explicit grants to `qms_app`: SELECT/INSERT/UPDATE/DELETE, never TRUNCATE).
+
+| Table | Columns | Constraints |
+|---|---|---|
+| `department` | id, tenant_id, name, status, created_at, updated_at | unique(tenant_id, lower(name)); status in (`Active`,`Inactive`) |
+| `ward` | id, tenant_id, name, department_id (FK), monthly_target (int >= 0), status, created_at, updated_at | unique(tenant_id, lower(name)) |
+| `staff_category` | id, tenant_id, name, code (1-3 chars, upper-case), status, created_at, updated_at | unique(tenant_id, lower(name)), unique(tenant_id, code) |
+| `setting` | id, tenant_id, key, value (jsonb), updated_at | unique(tenant_id, key); key `kpi` = `{"green":90,"amber":80,"inactive_days":10}` |
+
+Status changes write `status_history` (entity_type `department`/`ward`/`staff_category`) and `audit_log`. Defaults seeded per tenant by `python -m app.cli init`: six staff categories (Doctor D, Nurse N, Technician T, Housekeeping H, Student S, Other HCW O) and the `kpi` setting. Wards and departments are NOT seeded in production; `python -m app.cli seed-demo` loads the prototype's demo data (development only).
+
 ## Seeded per tenant (by `python -m app.cli init`, idempotent)
 - Permissions (in matrix order): `masters`, `users`, `ln`, `record`, `review`, `targets`, `dash`, `alerts`, `reports`.
 - Roles: `admin` (Admin), `icn` (ICN), `qm` (Quality Manager), `link_nurse` (Link nurse), all `is_system`, with the default matrix from `docs/roles-permissions.md`.

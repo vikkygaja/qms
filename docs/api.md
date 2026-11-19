@@ -95,3 +95,63 @@ Login rules: employee ID is case-insensitive. 5 failed attempts lock the account
   "old_values": { "status": "Active" }, "new_values": { "status": "Inactive" } }
 ```
 Audited actions: `create`, `update`, `status_change`, `password_reset`, `password_change`, `permission_change`, `role_create`, `account_locked`. Passwords and tokens are never stored in audit values.
+
+---
+
+# Slice 3 contract: masters (wards, departments, staff categories, KPI thresholds)
+
+Base `/api/v1`. **Read** endpoints: any signed-in user (entry screens need the lists). **Write, import, export**: permission `masters`. Same CSRF and error rules as Slice 2. Nothing is ever deleted; items are made Active/Inactive.
+
+## Shapes
+```jsonc
+// Department
+{ "id": "uuid", "name": "Critical Care", "status": "Active", "ward_count": 5 }
+// Ward
+{ "id": "uuid", "name": "MICU", "department": { "id": "uuid", "name": "Critical Care" },
+  "monthly_target": 65, "status": "Active" }
+// StaffCategory
+{ "id": "uuid", "name": "Doctor", "code": "D", "status": "Active" }
+// KpiSettings
+{ "green": 90, "amber": 80, "inactive_days": 10 }
+```
+
+## CRUD (the same four calls for each kind K = `departments` | `wards` | `staff-categories`)
+| Method + path | Request | Success | Notes |
+|---|---|---|---|
+| `GET /K` | query `status` (`Active`/`Inactive`), `q` (name), `page`, `page_size` (default 100, max 500) | `200 Page<item>` | Sorted by name. Inactive items are returned only when asked for (`status=Inactive`) or when `status` is omitted. Entry screens pass `status=Active`. |
+| `POST /K` | departments `{name}`; wards `{name, department_id, monthly_target}`; staff-categories `{name, code}` | `201 item` | `409 conflict` "That name already exists." (names unique per kind, case-insensitive; category `code` also unique). `422` field errors: name 1-100 chars; `monthly_target` integer 0-100000; `code` 1-3 letters/digits (stored upper-case); `department_id` must be an Active department. |
+| `PATCH /K/{id}` | any of the create fields | `200 item` | Same validation. A ward may keep its department even if the department later becomes Inactive. |
+| `POST /K/{id}/status` | `{status: "Active"\|"Inactive", reason}` | `200 item` | `reason` required (422). Same status → `409`. Recorded in status history and audit. (Slice 4 adds: a ward with current link nurses cannot become Inactive.) |
+
+## KPI thresholds
+| Method + path | Request | Success | Notes |
+|---|---|---|---|
+| `GET /settings/kpi` | | `200 KpiSettings` | any signed-in user |
+| `PUT /settings/kpi` | `{green, amber, inactive_days}` | `200 KpiSettings` | `masters`. Rules: integers; `1 <= amber < green <= 100`; `inactive_days` 1-365. Errors are field errors. Audited (old and new values). |
+
+## Export / template / import (all need `masters`)
+| Method + path | Notes |
+|---|---|
+| `GET /masters/export?kind=all\|wards\|departments\|staff-categories&format=xlsx\|csv` | File download (`Content-Disposition: attachment; filename="qms-masters-YYYYMMDD.xlsx"`). `kind=all` is xlsx only (csv → 422) and has sheets **Departments**, **Staff categories**, **Wards**, **KPI thresholds** (read-only information). Cells that start with `=`, `+`, `-` or `@` are prefixed with `'`. |
+| `GET /masters/template?kind=...&format=...` | Same sheets as export but with only the importable header columns and NO data rows (so an unchanged template can never import junk), plus an **Instructions** sheet (first sheet) for `kind=all` in xlsx. The example is described in the instructions. |
+| `POST /masters/import?kind=all\|wards\|departments\|staff-categories&dry_run=true\|false` | `multipart/form-data` with field `file` (`.xlsx` or `.csv`, max 2 MB, max 5,000 rows). CSV needs a single `kind`. Always `200` with a report (below); malformed files → `422`, too big → `413 payload_too_large`. |
+
+Import columns (header row, case-insensitive, extra columns ignored):
+- **Departments**: `Name`
+- **Staff categories**: `Name`, `Code`
+- **Wards**: `Name`, `Department`, `Monthly target`
+- The `Status` column that export writes is **ignored on import**. Import never changes status and never deletes.
+- Rows match existing items by name (case-insensitive): new → created, existing → updated (target, department, code), identical → unchanged.
+- For `kind=all` the sheets are processed in this order: Departments, Staff categories, Wards, so wards can use departments created in the same file. A ward's `Department` must exist (or be in the file).
+
+Import report (`200`):
+```jsonc
+{ "dry_run": true, "applied": false,
+  "summary": { "created": 3, "updated": 2, "unchanged": 15, "errors": 1 },
+  "rows": [ { "sheet": "Wards", "row": 7, "name": "ICU 2", "action": "create" | "update" | "unchanged" | "error",
+              "message": "Department 'Critcal Care' does not exist" } ],
+  "truncated": false }   // rows is capped at 500 entries; errors are listed first
+```
+`applied` is true only when `dry_run=false` **and** there are no errors (all-or-nothing). With errors and `dry_run=false`, nothing is changed and `applied` is false.
+
+Audit: entities `department`, `ward`, `staff_category` (actions `create`, `update`, `status_change`), entity `setting` (action `update`), entity `masters` (action `import`, one entry per upload with the counts and file name).

@@ -12,6 +12,8 @@ dependencies = [
   "pydantic>=2.9,<3",
   "pydantic-settings>=2.6,<3",
   "argon2-cffi>=23.1,<26",
+  "openpyxl>=3.1,<4",
+  "python-multipart>=0.0.20,<1",
   "redis>=5.2,<6",
   "rq>=2.0,<3",
 ]
@@ -42,7 +44,7 @@ select = ["E", "F", "I", "B", "UP", "S"]
 
 [tool.ruff.lint.flake8-bugbear]
 # FastAPI's Depends/Query in argument defaults is the framework's idiom, not a bug.
-extend-immutable-calls = ["fastapi.Depends", "fastapi.Query"]
+extend-immutable-calls = ["fastapi.Depends", "fastapi.Query", "fastapi.File"]
 
 [tool.ruff.lint.per-file-ignores]
 "tests/*" = ["S101", "S105", "S106"]

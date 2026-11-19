@@ -136,3 +136,4 @@ def require_permission(code: str) -> Callable[..., AuthContext]:
 
 # One shared instance so FastAPI resolves it once per request (router-level + handler-level).
 require_users = require_permission("users")
+require_masters = require_permission("masters")

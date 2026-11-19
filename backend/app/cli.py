@@ -21,6 +21,8 @@ from app.audit import service as audit
 from app.core.config import Settings, get_settings
 from app.core.db import make_engine, set_tenant
 from app.core.security import hash_password, password_policy_error, temporary_password
+from app.masters import service as masters_service
+from app.masters.demo import seed_demo
 from app.roles.models import Role
 from app.roles.seed import ADMIN_KEY, ensure_catalog, ensure_tenant
 from app.users.models import ACTIVE, User, UserRole
@@ -65,9 +67,32 @@ def _init(settings: Settings) -> int:
     with Session(engine) as db:
         tenant = ensure_tenant(db, settings.default_tenant_code, settings.default_tenant_name)
         ensure_catalog(db, tenant)
+        masters_service.ensure_defaults(db, tenant)
         db.commit()
     engine.dispose()
     print(f"Tenant {settings.default_tenant_code} is ready.")
+    return 0
+
+
+def _seed_demo(settings: Settings, force: bool) -> int:
+    if settings.env != "development" and not force:
+        print(
+            "Refusing to load demo data: ENV is not 'development'. "
+            "Use --force only on a test system.",
+            file=sys.stderr,
+        )
+        return 1
+    engine = make_engine(settings.database_url.get_secret_value())
+    try:
+        with Session(engine) as db:
+            tenant = ensure_tenant(db, settings.default_tenant_code, settings.default_tenant_name)
+            ensure_catalog(db, tenant)
+            masters_service.ensure_defaults(db, tenant)
+            depts, wards = seed_demo(db, tenant)
+            db.commit()
+    finally:
+        engine.dispose()
+    print(f"Demo data ready: {depts} departments and {wards} wards added.")
     return 0
 
 
@@ -130,6 +155,8 @@ def main(argv: list[str] | None = None) -> int:
     sub = parser.add_subparsers(dest="cmd", required=True)
     sub.add_parser("migrate", help="create the runtime DB role and upgrade the schema")
     sub.add_parser("init", help="create the default tenant, permissions and roles (idempotent)")
+    demo = sub.add_parser("seed-demo", help="load dummy departments and wards (test systems only)")
+    demo.add_argument("--force", action="store_true", help="allow outside ENV=development")
     admin = sub.add_parser("create-admin", help="create an Admin user")
     admin.add_argument("--employee-id", required=True)
     admin.add_argument("--name", required=True)
@@ -149,6 +176,8 @@ def main(argv: list[str] | None = None) -> int:
         return 0
     if args.cmd == "init":
         return _init(settings)
+    if args.cmd == "seed-demo":
+        return _seed_demo(settings, args.force)
     return _create_admin(settings, args)
 
 
