@@ -77,12 +77,16 @@ def _filtered(stmt, model, status: str | None, q: str | None):
     return stmt
 
 
-def _page(db: Session, stmt, model, page: PageParams):
+def _page(db: Session, stmt, page: PageParams, *order_by):
     total = db.scalar(select(func.count()).select_from(stmt.subquery())) or 0
-    rows = db.execute(
-        stmt.order_by(func.lower(model.name)).offset(page.offset).limit(page.page_size)
-    ).all()
+    rows = db.execute(stmt.order_by(*order_by).offset(page.offset).limit(page.page_size)).all()
     return rows, total
+
+
+def _ordered(column, order: str, name_column):
+    """Sort by `column`, ties broken by name so paging is stable."""
+    primary = column.desc() if order == "desc" else column.asc()
+    return (primary, func.lower(name_column).asc())
 
 
 def _apply_status(
@@ -170,10 +174,30 @@ def _ward_counts(db: Session) -> dict[uuid.UUID, int]:
     )
 
 
-def list_departments(db: Session, page: PageParams, status, q) -> tuple[list[dict], int]:
-    rows, total = _page(db, _filtered(select(Department), Department, status, q), Department, page)
-    counts = _ward_counts(db)
-    return [department_out(d, counts.get(d.id, 0)) for (d,) in rows], total
+def list_departments(
+    db: Session, page: PageParams, status, q, sort: str = "name", order: str = "asc"
+) -> tuple[list[dict], int]:
+    counts = (
+        select(Ward.department_id.label("department_id"), func.count().label("n"))
+        .group_by(Ward.department_id)
+        .subquery()
+    )
+    ward_count = func.coalesce(counts.c.n, 0)
+    stmt = _filtered(
+        select(Department, ward_count.label("ward_count")).outerjoin(
+            counts, counts.c.department_id == Department.id
+        ),
+        Department,
+        status,
+        q,
+    )
+    column = {
+        "name": func.lower(Department.name),
+        "ward_count": ward_count,
+        "status": Department.status,
+    }[sort]
+    rows, total = _page(db, stmt, page, *_ordered(column, order, Department.name))
+    return [department_out(d, n) for d, n in rows], total
 
 
 def create_department(db: Session, ctx: AuthContext, name: str) -> dict:
@@ -219,9 +243,25 @@ def set_department_status(
 # ---------- wards ----------
 
 
-def list_wards(db: Session, page: PageParams, status, q) -> tuple[list[dict], int]:
+def list_wards(
+    db: Session,
+    page: PageParams,
+    status,
+    q,
+    department_id: uuid.UUID | None = None,
+    sort: str = "name",
+    order: str = "asc",
+) -> tuple[list[dict], int]:
     stmt = _filtered(select(Ward, Department).join(Department), Ward, status, q)
-    rows, total = _page(db, stmt, Ward, page)
+    if department_id:
+        stmt = stmt.where(Ward.department_id == department_id)
+    column = {
+        "name": func.lower(Ward.name),
+        "department": func.lower(Department.name),
+        "monthly_target": Ward.monthly_target,
+        "status": Ward.status,
+    }[sort]
+    rows, total = _page(db, stmt, page, *_ordered(column, order, Ward.name))
     return [ward_out(w, d) for w, d in rows], total
 
 
@@ -291,11 +331,37 @@ def set_ward_status(
 # ---------- staff categories ----------
 
 
-def list_categories(db: Session, page: PageParams, status, q) -> tuple[list[dict], int]:
-    rows, total = _page(
-        db, _filtered(select(StaffCategory), StaffCategory, status, q), StaffCategory, page
-    )
+def list_categories(
+    db: Session, page: PageParams, status, q, sort: str = "name", order: str = "asc"
+) -> tuple[list[dict], int]:
+    stmt = _filtered(select(StaffCategory), StaffCategory, status, q)
+    column = {
+        "name": func.lower(StaffCategory.name),
+        "code": StaffCategory.code,
+        "status": StaffCategory.status,
+    }[sort]
+    rows, total = _page(db, stmt, page, *_ordered(column, order, StaffCategory.name))
     return [category_out(c) for (c,) in rows], total
+
+
+def summary(db: Session) -> dict:
+    """Headline numbers for the Masters overview page."""
+
+    def counts(model) -> dict:
+        by_status = dict(
+            db.execute(select(model.status, func.count()).group_by(model.status)).all()
+        )
+        return {"active": by_status.get(ACTIVE, 0), "inactive": by_status.get("Inactive", 0)}
+
+    target_total = db.scalar(
+        select(func.coalesce(func.sum(Ward.monthly_target), 0)).where(Ward.status == ACTIVE)
+    )
+    return {
+        "departments": counts(Department),
+        "wards": {**counts(Ward), "monthly_target_total": int(target_total or 0)},
+        "staff_categories": counts(StaffCategory),
+        "kpi": get_kpi(db),
+    }
 
 
 def create_category(db: Session, ctx: AuthContext, name: str, code: str) -> dict:

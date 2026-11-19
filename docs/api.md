@@ -155,3 +155,14 @@ Import report (`200`):
 `applied` is true only when `dry_run=false` **and** there are no errors (all-or-nothing). With errors and `dry_run=false`, nothing is changed and `applied` is false.
 
 Audit: entities `department`, `ward`, `staff_category` (actions `create`, `update`, `status_change`), entity `setting` (action `update`), entity `masters` (action `import`, one entry per upload with the counts and file name).
+
+## Slice 3b additions (Masters redesign, for lists of hundreds of rows)
+- **Sorting** on the three list endpoints: `sort` and `order` (`asc` default, or `desc`). Allowed `sort` values: wards `name` (default), `department`, `monthly_target`, `status`; departments `name` (default), `ward_count`, `status`; staff-categories `name` (default), `code`, `status`. An unknown value is a 422. Ties are broken by name.
+- **Ward filter** `GET /wards?department_id=<uuid>` returns only that department's wards (combines with `status`, `q`, sorting and paging).
+- **Summary** `GET /masters/summary` (any signed-in user):
+```jsonc
+{ "departments": { "active": 11, "inactive": 0 },
+  "wards": { "active": 20, "inactive": 0, "monthly_target_total": 1000 },   // total counts ACTIVE wards only
+  "staff_categories": { "active": 6, "inactive": 0 },
+  "kpi": { "green": 90, "amber": 80, "inactive_days": 10 } }
+```

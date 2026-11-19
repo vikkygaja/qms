@@ -1,5 +1,6 @@
 import uuid
 from datetime import datetime
+from typing import Literal
 
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
@@ -33,6 +34,15 @@ from app.users.schemas import StatusChange
 router = APIRouter(tags=["masters"], dependencies=[Depends(active_context)])
 
 
+Order = Literal["asc", "desc"]
+
+
+@router.get("/masters/summary")
+def masters_summary(db: Session = Depends(get_db)):
+    """Headline numbers for the Masters overview page (any signed-in user)."""
+    return service.summary(db)
+
+
 def list_params(
     status: StatusFilter | None = None,
     q: str | None = Query(None, max_length=100),
@@ -46,9 +56,14 @@ def list_params(
 
 
 @router.get("/departments")
-def list_departments(params=Depends(list_params), db: Session = Depends(get_db)):
+def list_departments(
+    params=Depends(list_params),
+    sort: Literal["name", "ward_count", "status"] = "name",
+    order: Order = "asc",
+    db: Session = Depends(get_db),
+):
     status, q, page = params
-    items, total = service.list_departments(db, page, status, q)
+    items, total = service.list_departments(db, page, status, q, sort, order)
     return page_of(items, total, page)
 
 
@@ -84,9 +99,15 @@ def department_status(
 
 
 @router.get("/wards")
-def list_wards(params=Depends(list_params), db: Session = Depends(get_db)):
+def list_wards(
+    params=Depends(list_params),
+    department_id: uuid.UUID | None = None,
+    sort: Literal["name", "department", "monthly_target", "status"] = "name",
+    order: Order = "asc",
+    db: Session = Depends(get_db),
+):
     status, q, page = params
-    items, total = service.list_wards(db, page, status, q)
+    items, total = service.list_wards(db, page, status, q, department_id, sort, order)
     return page_of(items, total, page)
 
 
@@ -122,9 +143,14 @@ def ward_status(
 
 
 @router.get("/staff-categories")
-def list_categories(params=Depends(list_params), db: Session = Depends(get_db)):
+def list_categories(
+    params=Depends(list_params),
+    sort: Literal["name", "code", "status"] = "name",
+    order: Order = "asc",
+    db: Session = Depends(get_db),
+):
     status, q, page = params
-    items, total = service.list_categories(db, page, status, q)
+    items, total = service.list_categories(db, page, status, q, sort, order)
     return page_of(items, total, page)
 
 
