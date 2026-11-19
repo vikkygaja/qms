@@ -39,6 +39,19 @@ Format: date — decision — reason. Never guess a requirement: ask, then recor
 30. **Commits delegated to `tester-committer`**: only on a feature branch, only after tests and linters pass, never to `main`, never `git push` without the user's explicit instruction. (Refines decision 25.)
 31. **Server** `qms@192.168.11.157` (key-based SSH from the dev Mac): Ubuntu 26.04.1 LTS (brief assumed 24.04), 4 CPU, 11 GB RAM, 1 TB disk; Docker and Nginx not installed; `qms` has sudo but needs a password, so privileged steps are given to the user to run. Inspection is read-only unless the user approves a change.
 
+## 2026-11-19 — Slice 2 (auth, users, roles, audit) decisions
+32. **Slice 1 merged** to `main` (PR #1, merge `b6b2d58`). Slice 2 on branch `slice-2-auth`; backend commit first, frontend commit second, one PR.
+33. **Cookie `Secure` flag** is controlled by `COOKIE_SECURE` (default true). The server runs plain HTTP until Slice 9, so it is false there until HTTPS exists.
+34. **Session timeouts**: 30 minutes idle, 12 hours absolute (`SESSION_IDLE_MINUTES`, `SESSION_ABSOLUTE_HOURS`).
+35. **Tenant at login**: a configured default tenant (`DEFAULT_TENANT_CODE`, SNHRC) for the pilot; hostname-based resolution later for other hospitals. Session cookie value is `<tenant_id>.<token>` so the tenant is known before the DB lookup (needed for RLS).
+36. **One role per user** in the UI and API; `user_role` allows more later.
+37. **First admin** is created by a CLI command (`python -m app.cli create-admin`) reading the password from the `QMS_ADMIN_PASSWORD` environment variable (never argv). Without it a temporary password is generated, printed once, and a change is forced.
+38. **Audit log viewer** requires permission `users`.
+39. **Runtime DB role**: the app connects as a non-superuser role `qms_app` (the Postgres image's `qms` user is a superuser and would bypass row-level security). Migrations and provisioning use the owner role. `audit_log` is append-only by trigger and by grants (`qms_app` has INSERT and SELECT only).
+40. **Every table has `tenant_id`**, including `permission` (seeded per tenant); `tenant` itself is the exception.
+41. **Last active admin** = the last active user holding the `users` permission. The `Admin` role cannot lose `users`. A new custom role starts with `dash` only (as in the prototype). Link nurses cannot be created or assigned through the Users API (Slice 4).
+42. **Test instance**: a separate Compose project (`-p qms-test`) on port 8081 with its own database and `APP_ENV=development` (API docs on). Promotion to a new port = same code, fresh database from migrations, not a copy of test data, unless the user asks for a data copy. The test admin's password lives only in the server's env file, never in git.
+
 ## 2026-11-19 — Prototype findings (behaviour to match; items needing confirmation are under Open items)
 - Observed behaviours already consistent with the brief: temporary password shown once with Copy; first-login "Set your new password" screen (8+ chars, letters + numbers, confirm field); inactive message "This account is inactive. Contact the ICN or IT."; rejected sessions excluded from KPIs; Missed disables technique ("NS" = not applicable); moments multi-select; last-admin protection; "Roles & permissions" and "Users" pages both gated by `users`; Admin's `users` checkbox is locked on.
 - Link nurse nav labels differ: "Sessions" → "My sessions", "Dashboard" → "My wards".

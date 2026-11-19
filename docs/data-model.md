@@ -39,4 +39,37 @@ Conventions: every table has `id` (UUID), `tenant_id`, `created_at`, `updated_at
 - Rejected sessions keep their rows but are excluded from KPI queries.
 - Session numbers `HH-YYMM-NNNN` allocated per tenant (sequence/counter table — to be decided in Slice 5).
 
-_Full column types, constraints and RLS policies to be written here per slice before migrations._
+_Full column types, constraints and RLS policies are written here per slice before migrations._
+
+---
+
+# Slice 2 tables (migration `0002`)
+
+IDs are UUIDs (`gen_random_uuid()`), timestamps are `timestamptz` (UTC). Every table except `tenant` has `tenant_id uuid NOT NULL REFERENCES tenant(id)`.
+
+| Table | Columns | Constraints |
+|---|---|---|
+| `tenant` | id, code, name, status (`Active`/`Inactive`), created_at | unique(code). No RLS (needed to resolve the tenant at login); runtime role has SELECT only. |
+| `permission` | id, tenant_id, code, description | unique(tenant_id, code) |
+| `role` | id, tenant_id, key, name, is_system, created_at | unique(tenant_id, key), unique(tenant_id, name) |
+| `role_permission` | tenant_id, role_id, permission_id | PK(role_id, permission_id) |
+| `user` (`app_user`) | id, tenant_id, employee_id (upper-case), full_name, designation, mobile, email, password_hash, must_change_password, failed_attempts, locked_until, status, last_login_at, created_at, updated_at | unique(tenant_id, employee_id); status in (`Active`,`Inactive`) |
+| `user_role` | tenant_id, user_id, role_id | PK(user_id, role_id) |
+| `session` (`user_session`) | id, tenant_id, user_id, token_hash (sha256 hex), csrf_token, created_at, last_seen_at, expires_at, revoked_at, ip, user_agent | unique(token_hash); index(user_id) |
+| `status_history` | id, tenant_id, entity_type, entity_id, old_status, new_status, reason, effective_date, changed_by, changed_at | index(entity_type, entity_id) |
+| `audit_log` | id (bigserial), tenant_id, at, actor_user_id, entity, entity_id, action, summary, old_values jsonb, new_values jsonb, ip | index(tenant_id, at desc), index(entity, entity_id) |
+
+Physical names `app_user` and `user_session` avoid the reserved words `user` and `session`.
+
+## Row-level security
+- Every table except `tenant` has `ENABLE` + `FORCE ROW LEVEL SECURITY` and one policy: `USING (tenant_id = nullif(current_setting('app.tenant_id', true), '')::uuid) WITH CHECK (same)`. With no tenant set, no rows are visible and none can be written.
+- The app sets `app.tenant_id` per transaction (`set_config(..., true)`), re-applied after every commit.
+- Runtime role `qms_app` (non-superuser, no BYPASSRLS) is used by the API. Migrations run as the owner. Superusers bypass RLS, which is why the API must not connect as the owner.
+
+## Append-only audit log
+- `qms_app` has `SELECT, INSERT` on `audit_log` only (no UPDATE, DELETE, TRUNCATE).
+- Trigger `audit_log_no_change` raises on any UPDATE or DELETE, even for the owner.
+
+## Seeded per tenant (by `python -m app.cli init`, idempotent)
+- Permissions (in matrix order): `masters`, `users`, `ln`, `record`, `review`, `targets`, `dash`, `alerts`, `reports`.
+- Roles: `admin` (Admin), `icn` (ICN), `qm` (Quality Manager), `link_nurse` (Link nurse), all `is_system`, with the default matrix from `docs/roles-permissions.md`.

@@ -11,6 +11,7 @@ dependencies = [
   "psycopg[binary]>=3.2,<4",
   "pydantic>=2.9,<3",
   "pydantic-settings>=2.6,<3",
+  "argon2-cffi>=23.1,<26",
   "redis>=5.2,<6",
   "rq>=2.0,<3",
 ]
@@ -39,8 +40,14 @@ target-version = "py312"
 [tool.ruff.lint]
 select = ["E", "F", "I", "B", "UP", "S"]
 
+[tool.ruff.lint.flake8-bugbear]
+# FastAPI's Depends/Query in argument defaults is the framework's idiom, not a bug.
+extend-immutable-calls = ["fastapi.Depends", "fastapi.Query"]
+
 [tool.ruff.lint.per-file-ignores]
 "tests/*" = ["S101", "S105", "S106"]
+# Migrations build fixed DDL from module constants (no user input).
+"migrations/*" = ["S608"]
 
 [tool.black]
 line-length = 100

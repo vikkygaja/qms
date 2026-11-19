@@ -24,7 +24,10 @@ ux-designer, dba-backup, security-auditor (read-only), tester-committer, fronten
 - [x] Server: Docker installed and verified.
 - [x] Branch `slice-1-skeleton` created.
 - [x] Slice 1 implementation (2026-11-19): backend (FastAPI health, error format, config, Alembic baseline, RQ worker stub) 17 tests passing on real Postgres, ruff + black clean, 86% coverage; frontend (Vite/React shell, health badge) 10 tests passing, eslint/prettier/tsc build clean; Compose stack (db, redis, api, worker, web, nginx) running on the server at http://192.168.11.157:8080; GitHub Actions CI written (not yet run: nothing pushed). MinIO service defined but disabled (image unavailable, see decisions.md open items).
-- [ ] Slice 1: user review, then merge via PR once CI is green.
+- [x] Slice 1 merged to main (PR #1, 2026-11-19).
+- [~] Slice 2 (branch `slice-2-auth`, in progress): backend done (139 tests pass on real Postgres, 96% coverage, ruff/black clean): auth with server-side sessions + CSRF + lockout, users, roles/permissions, append-only audit log, row-level security with the non-superuser role `qms_app`, CLI (`python -m app.cli migrate|init|create-admin`). Frontend built by a subagent (50 tests pass; login, forced password change, Users, Roles matrix, Audit log pages), not yet verified against the real API. Test instance `qms-dev` on port 8081 (env file `~/qms/.env.dev` on the server, `APP_ENV=development`, `COOKIE_SECURE=false`); test admin login `Admin` (password only in the user's chat/env, not in git).
+- [ ] Slice 2: verify UI against the real API, commit, push, PR, merge.
+- Promotion plan: when the user approves the test instance, start the same code as a second instance on a new port with a fresh database (not a copy of test data) unless the user asks for a data copy.
 - [ ] Slices 2-9 (see CLAUDE.md).
 
 ## How to run things (all on the server, code is rsynced from the Mac)

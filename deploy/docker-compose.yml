@@ -4,8 +4,14 @@ name: qms
 
 x-api-env: &api-env
   ENV: ${APP_ENV:-production}
+  # Owner connection: migrations and provisioning only.
   DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-qms}:${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}@db:5432/${POSTGRES_DB:-qms}
+  # Runtime connection as the non-superuser role qms_app (row-level security applies to it).
+  APP_DATABASE_URL: postgresql+psycopg://qms_app:${APP_DB_PASSWORD:?set APP_DB_PASSWORD in .env}@db:5432/${POSTGRES_DB:-qms}
   REDIS_URL: redis://redis:6379/0
+  COOKIE_SECURE: ${COOKIE_SECURE:-true}
+  DEFAULT_TENANT_CODE: ${DEFAULT_TENANT_CODE:-SNHRC}
+  DEFAULT_TENANT_NAME: ${DEFAULT_TENANT_NAME:-Sri Narayani Hospital & Research Centre}
 
 services:
   db:
@@ -59,7 +65,7 @@ services:
       context: ../backend
     restart: unless-stopped
     environment: *api-env
-    command: ["sh", "-c", "alembic upgrade head && exec uvicorn app.main:build --factory --host 0.0.0.0 --port 8000"]
+    command: ["sh", "-c", "python -m app.cli migrate && python -m app.cli init && exec uvicorn app.main:build --factory --host 0.0.0.0 --port 8000"]
     depends_on:
       db:
         condition: service_healthy

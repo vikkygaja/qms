@@ -1,19 +1,31 @@
-from collections.abc import AsyncIterator
+from collections.abc import AsyncIterator, Callable
 from contextlib import asynccontextmanager
+from datetime import UTC, datetime
 
 from fastapi import FastAPI
 
+from app.audit.router import router as audit_router
+from app.auth.router import router as auth_router
 from app.core import health
 from app.core.config import Settings, get_settings
-from app.core.db import make_engine
+from app.core.db import make_engine, make_sessionmaker
 from app.core.errors import register_exception_handlers
+from app.roles.router import router as roles_router
+from app.users.router import router as users_router
 
 API_PREFIX = "/api/v1"
 
 
-def create_app(settings: Settings | None = None) -> FastAPI:
+def _utcnow() -> datetime:
+    return datetime.now(UTC)
+
+
+def create_app(
+    settings: Settings | None = None, clock: Callable[[], datetime] | None = None
+) -> FastAPI:
     settings = settings or get_settings()
-    engine = make_engine(settings.database_url.get_secret_value())
+    # The API runs as the non-superuser role so row-level security applies.
+    engine = make_engine(settings.runtime_database_url)
 
     @asynccontextmanager
     async def lifespan(_: FastAPI) -> AsyncIterator[None]:
@@ -31,9 +43,13 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     )
     app.state.settings = settings
     app.state.engine = engine
+    app.state.sessionmaker = make_sessionmaker(engine)
+    app.state.clock = clock or _utcnow
 
     register_exception_handlers(app)
     app.include_router(health.router, prefix=API_PREFIX)
+    for router in (auth_router, users_router, roles_router, audit_router):
+        app.include_router(router, prefix=API_PREFIX)
     return app
 
 
